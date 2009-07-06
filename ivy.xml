@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.jaya.free.fr/misc/ivy/ivy.txt">
+    <info organisation="com.101tec" module="zkclient" />
+
+    <!-- project configuration -->
+    <configurations>
+        <conf name="ant" description="for ant usage" />
+        <conf name="eclipse" description="to generate eclipse config files" />
+
+        <conf name="compile" description="dependencies needed to compile" />
+        <conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies" />
+
+        <conf name="test" extends="compile" description="external dependencies needed to test the application" />
+    </configurations>
+
+    <publications>
+        <artifact name="zkclient" type="jar" conf="master" />
+    </publications>
+
+    <!-- dependencies -->
+    <!-- e.g.:   <dependency org="apache" name="commons-collections" rev="3.1" conf="cc-impl->default"/> -->
+    <dependencies defaultconfmapping="*->default">
+        <!-- Build -->
+        <dependency org="prantl.ant.eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
+
+        <!-- Zookeeper -->
+        <dependency org="x" name="zookeeper" rev="3.1.1" conf="compile" />
+
+        <!-- Logging -->
+        <dependency org="log4j" name="log4j" rev="1.2.14" conf="compile" />
+
+        <!-- Testing -->
+        <dependency org="junit" name="junit" rev="4.5" conf="test" />
+        <dependency org="org.apache.commons" name="commons-io" rev="1.4" conf="test" />
+        <dependency org="org.mockito" name="mockito-core" rev="1.7" conf="compile" />
+    </dependencies>
+</ivy-module>

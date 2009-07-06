@@ -1,0 +1,150 @@
+<project name="zkclient" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<property file="build.properties" />
+
+	<target name="download-ivy" unless="ivyIsAvailable" description="--> downloads ivy from a maven repo">
+		<mkdir dir="${ivy.jar.dir}" />
+		<echo message="installing ivy..." />
+		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" />
+		<get src="http://repo1.maven.org/maven2/com/jcraft/jsch/${jcraft.install.version}/jsch-${jcraft.install.version}.jar" dest="${jcraft.jar.file}" usetimestamp="true" />
+	</target>
+
+    <target name="check-ivy-available">
+		<available file="${ivy.jar.file}" property="ivyIsAvailable" />
+		<antcall target="download-ivy" />
+	</target>
+
+    <target name="install-ivy" depends="check-ivy-available" description="--> install ivy">
+		<property environment="env" />
+		<path id="ivy.lib.path">
+			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
+		</path>
+		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
+		<ivy:settings file="${root.dir}/ivy/ivysettings.xml" />
+
+	    <available file="${it.src.dir}" type="dir" property="integration-test.exists" />
+	</target>
+
+    <target name="eclipse" depends="install-ivy" description="--> creates eclipse project files">
+		<ivy:resolve useOrigin="true" conf="test,eclipse"/>
+		<ivy:cachepath pathid="eclipse.path.id" conf="eclipse" />
+		<ivy:cachepath pathid="test.path.id" conf="test" />
+		<ivy:cachepath pathid="compile.path.id" conf="compile" />
+		<taskdef name="eclipse"
+		         classname="prantl.ant.eclipse.EclipseTask"
+		         classpathref="eclipse.path.id" />
+		<mkdir dir="${build.dir.main-classes}" />
+		<mkdir dir="${build.dir.test-classes}" />
+		<eclipse updatealways="true">
+			<settings>
+				<jdtcore compilercompliance="6.0" />
+				<resources encoding="UTF-8" />
+			</settings>
+			<project name="${ant.project.name}" />
+			<classpath>
+				<container path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6" />
+
+				<!-- each new module need to be added here -->
+				<source path="${main.src.dir}"
+				        output="${build.dir.eclipse-main-classes}" />
+				<source path="${test.src.dir}"
+				        output="${build.dir.eclipse-test-classes}" />
+
+				<output path="${build.dir.eclipse-main-classes}" />
+				<library pathref="test.path.id" exported="false" />
+				<library pathref="compile.path.id" exported="true" />
+			</classpath>
+		</eclipse>
+		<concat destfile="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs" append="true">
+			<filelist dir="${root.dir}/src/build/eclipse" files="formatter"/>
+		</concat>
+		<replace file="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs" token="org.eclipse.jdt.core.compiler.compliance=6.0" value="org.eclipse.jdt.core.compiler.compliance=1.6" />
+	</target>
+
+	<target name="clean-eclipse" description="--> cleans eclipse files">
+		<delete file=".classpath" />
+		<delete file=".eclipse" />
+		<delete file=".project" />
+		<delete dir=".settings" />
+		<delete dir="${build.dir.eclipse}" />
+	</target>
+
+	<target name="compile" depends="install-ivy" description="--> compile main classes">
+		<ivy:resolve useOrigin="true" conf="compile"/>
+		<mkdir dir="${build.dir.main-classes}" />
+		<ivy:cachepath pathid="build.path.id" conf="compile" />
+
+		<javac encoding="${build.encoding}" destdir="${build.dir.main-classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+			<src path="${main.src.dir}" />
+			<compilerarg line="${javac.args} ${javac.args.warnings}" />
+			<classpath refid="build.path.id" />
+			<classpath path="${main.res.dir}" />
+		</javac>
+		<copy todir="${build.dir.main-classes}" failonerror="false">
+			<fileset dir="${main.res.dir}"/>
+		</copy>
+	</target>
+
+	<target name="jar" depends="compile" description="--> builds jar file">
+		<tstamp>
+			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
+		</tstamp>
+
+		<jar jarfile="${build.dir}/${jar.name}" basedir="${build.dir.main-classes}" />
+	</target>
+
+	<target name="clean" description="--> clean">
+		<echo>cleaning ${ant.project.name}</echo>
+		<delete dir="${build.dir}" />
+	</target>
+
+    <target name="compile-test" depends="compile" description="--> compile test classes">
+		<echo>*** Building Tests Sources of ${ant.project.name} ***</echo>
+		<mkdir dir="${build.dir.test-classes}" />
+		<ivy:cachepath pathid="test.path.id" conf="test" />
+
+	    <path id="test.path">
+			<path refid="test.path.id" />
+			<pathelement location="${build.dir.main-classes}" />
+		</path>
+		<javac encoding="${build.encoding}" srcdir="${test.src.dir}" includes="**/*.java" destdir="${build.dir.test-classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+			<compilerarg line="${javac.args} ${javac.args.warnings}" />
+			<classpath refid="test.path" />
+		</javac>
+	</target>
+
+    <target name="test" depends="compile-test" description="--> runs junit test classes">
+        <!-- Set deploy.mode if it hasn't been ... earlier definition overrides. -->
+        <property name="forkmode" value="once" />
+        <echo>forkmode=${forkmode}</echo>
+
+        <delete dir="${build.dir.test-reports}" />
+        <mkdir dir="${build.dir.test-reports}" />
+        <delete dir="${build.dir.test-data}" />
+        <mkdir dir="${build.dir.test-data}" />
+
+        <ivy:cachepath pathid="test.path.id" conf="test" />
+        <junit showoutput="false" printsummary="yes" haltonfailure="no" forkmode="${forkmode}" fork="yes" maxmemory="256m" dir="${basedir}" errorProperty="tests.failed" failureProperty="tests.failed">
+            <sysproperty key="deploy.mode" value="${deploy.mode}" />
+            <classpath>
+                <pathelement location="${build.dir.main-classes}" />
+                <pathelement location="${build.dir.test-classes}" />
+                <pathelement location="${test.res.dir}" />
+                <path refid="test.path.id" />
+            </classpath>
+            <formatter type="plain" />
+            <formatter type="xml" />
+
+            <batchtest fork="yes" todir="${build.dir.test-reports}">
+                <fileset dir="${test.src.dir}">
+                    <include name="**/*Test.java" />
+                    <exclude name="**/Abstract*.java" />
+                </fileset>
+            </batchtest>
+        </junit>
+        <fail if="tests.failed">Tests failed!</fail>
+    </target>
+
+	<target name="install" depends="jar" description="--> copies jar file to build directory" >
+        <ivy:publish artifactspattern="build/[artifact]-[revision].[ext]" resolver="install" overwrite="true" pubrevision="${version}" conf="compile, master"/>
+	</target>
+</project>
