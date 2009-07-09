@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkServer;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
@@ -16,29 +14,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-
 public class ZkClientTest {
-
-    private static class DeferredZookeeperStarter extends Thread {
-
-        private final ZkServer _zkServer;
-        private int _delay;
-
-        private DeferredZookeeperStarter(ZkServer zkServer, int delay) {
-            _zkServer = zkServer;
-            _delay = delay;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(_delay);
-                _zkServer.start();
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-    }
 
     private static final Logger LOG = Logger.getLogger(ZkClientTest.class);
 
@@ -52,19 +28,19 @@ public class ZkClientTest {
         LOG.info("------------ AFTER -------------");
     }
 
-    @Test(expected = IOException.class, timeout = 5000)
+    @Test(expected = IOException.class, timeout = 10000)
     public void testUnableToConnect() throws Exception {
         LOG.info("--- testUnableToConnect");
         // we are using port 4711 to avoid conflicts with the zk server that is
         // started by the Spring context
-        new ZkClient("localhost:4711", 1000);
+        new ZkClient("localhost:4711", 5000);
     }
 
     @Test
     public void testWriteAndRead() throws Exception {
         LOG.info("--- testWriteAndRead");
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWriteAndRead", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 1000);
+        ZkClient client = new ZkClient("localhost:4711", 5000);
         String data = "something";
         String path = "/a";
         client.createPersistent(path, data);
@@ -81,7 +57,7 @@ public class ZkClientTest {
     public void testDelete() throws Exception {
         LOG.info("--- testDelete");
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDelete", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 1000);
+        ZkClient client = new ZkClient("localhost:4711", 5000);
         String path = "/a";
         assertFalse(client.delete(path));
         client.createPersistent(path, null);
@@ -93,11 +69,11 @@ public class ZkClientTest {
         zkServer.join();
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 15000)
     public void testRetryUntilConnected() throws Exception {
         LOG.info("--- testRetryUntilConnected");
         final ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testRetryUntilConnected", 4711);
-        final ZkClient client = new ZkClient("localhost:4711", 1000);
+        final ZkClient client = new ZkClient("localhost:4711", 5000);
 
         zkServer.shutdown();
         zkServer.join();
@@ -105,7 +81,8 @@ public class ZkClientTest {
         // start server in 250ms
         new DeferredZookeeperStarter(zkServer, 250).start();
 
-        // this should work as soon as the connection is reestablished, if it fails it throws a ConnectionLossException
+        // this should work as soon as the connection is reestablished, if it
+        // fails it throws a ConnectionLossException
         client.retryUntilConnected(new Callable<Object>() {
 
             @Override
@@ -121,11 +98,11 @@ public class ZkClientTest {
         zkServer.join();
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 15000)
     public void testWaitUntilConnected() throws Exception {
         LOG.info("--- testWaitUntilConnected");
         final ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWaitUntilConnected", 4711);
-        final ZkClient client = new ZkClient("localhost:4711", 1000);
+        final ZkClient client = new ZkClient("localhost:4711", 5000);
 
         zkServer.shutdown();
         zkServer.join();

@@ -4,10 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
-import org.I0Itec.zkclient.ContentWatcher;
-import org.I0Itec.zkclient.Holder;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkServer;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
@@ -22,7 +18,7 @@ public class ContentWatcherTest {
     @Before
     public void setUp() throws Exception {
         _zkServer = ZkTestUtil.startZkServer("ContentWatcherTest", 4711);
-        _zkClient = new ZkClient("localhost:4711", 1000);
+        _zkClient = new ZkClient("localhost:4711", 5000);
     }
 
     @After
@@ -87,30 +83,28 @@ public class ContentWatcherTest {
         assertEquals(null, watcher.getContent());
     }
 
-    // @Test(timeout = 10000)
-    // public void testHandlingOfConnectionLoss() throws Exception {
-    // _zkServer.shutdown();
-    // _zkServer.join();
-    //
-    // // start server in 250ms
-    // new Thread() {
-    // @Override
-    // public void run() {
-    // try {
-    // Thread.sleep(250);
-    // _zkServer.start();
-    // _zkClient.createPersistent(FILE_NAME, "aaa");
-    // } catch (Exception e) {
-    // // ignore
-    // }
-    // }
-    // }.start();
-    //
-    // ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient,
-    // FILE_NAME) {
-    // };
-    // watcher.start();
-    // assertEquals("aaa", watcher.getContent());
-    // watcher.stop();
-    // }
+    @Test(timeout = 15000)
+    public void testHandlingOfConnectionLoss() throws Exception {
+        _zkServer.shutdown();
+        _zkServer.join();
+
+        // start server in 250ms
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(250);
+                    _zkServer.start();
+                    _zkClient.createPersistent(FILE_NAME, "aaa");
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        }.start();
+
+        ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
+        watcher.start();
+        assertEquals("aaa", watcher.getContent());
+        watcher.stop();
+    }
 }
