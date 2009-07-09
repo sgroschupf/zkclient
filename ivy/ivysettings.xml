@@ -2,9 +2,11 @@
     <settings defaultResolver="local-resolver-chain" />
     <resolvers>
         <chain name="local-resolver-chain" dual="true">
-            <!-- filesystem name="libraries">
-                <artifact pattern="${root.dir}/lib/[artifact]-[revision].[type]" />
-            </filesystem> -->
+            <filesystem name="libraries">
+                <artifact pattern="${basedir}/lib/[artifact]-[revision].[type]" />
+                <ivy pattern="${basedir}/lib/[artifact]-[revision].xml" />
+            </filesystem>
+
             <ibiblio name="ibiblio" m2compatible="true" />
 
             <filesystem checkmodified="true" name="install">
