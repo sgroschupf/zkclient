@@ -145,6 +145,6 @@
     </target>
 
 	<target name="install" depends="jar" description="--> copies jar file to build directory" >
-        <ivy:publish artifactspattern="build/[artifact]-[revision].[ext]" resolver="install" overwrite="true" pubrevision="${version}" conf="compile, master"/>
+        <ivy:publish artifactspattern="build/[artifact]-[revision].[ext]" resolver="install" overwrite="true" pubrevision="${zkclient.version}" conf="compile, master"/>
 	</target>
 </project>
