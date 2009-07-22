@@ -93,8 +93,11 @@
 	</target>
 
 	<target name="clean" description="--> clean">
-		<echo>cleaning ${ant.project.name}</echo>
 		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="clean-cache" depends="install-ivy" description="--> clean the ivy cache">
+		<ivy:cleancache />
 	</target>
 
     <target name="compile-test" depends="compile" description="--> compile test classes">

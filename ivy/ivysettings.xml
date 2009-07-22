@@ -1,5 +1,7 @@
 <ivysettings>
     <settings defaultResolver="local-resolver-chain" />
+    <caches defaultCacheDir="${ivy.cache}" />
+
     <resolvers>
         <chain name="local-resolver-chain" dual="true">
             <filesystem name="libraries">
