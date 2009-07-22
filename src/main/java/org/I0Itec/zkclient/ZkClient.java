@@ -272,12 +272,12 @@ public class ZkClient implements Watcher {
      * @throws KeeperException
      * @throws IOException
      */
-    public void createPersistent(final String path) throws KeeperException, InterruptedException, IOException {
+    public void createPersistent(String path) throws KeeperException, InterruptedException, IOException {
         create(path, null, CreateMode.PERSISTENT);
     }
 
     /**
-     * Creates an node for given path with given {@link Writable} data.
+     * Creates an node for given path with given {@link Serializable} data.
      * 
      * @param path
      * @param serializable
@@ -285,7 +285,7 @@ public class ZkClient implements Watcher {
      * @throws KeeperException
      * @throws IOException
      */
-    public void createPersistent(final String path, final Serializable serializable) throws KeeperException, InterruptedException, IOException {
+    public void createPersistent(String path, Serializable serializable) throws KeeperException, InterruptedException, IOException {
         create(path, serializable, CreateMode.PERSISTENT);
     }
 
@@ -321,7 +321,7 @@ public class ZkClient implements Watcher {
 
     public String create(final String path, final Serializable serializable, final CreateMode mode) throws KeeperException, InterruptedException, IOException {
         assert path != null;
-        final byte[] data = serializable == null ? null : writableToByteArray(serializable);
+        final byte[] data = serializable == null ? null : toByteArray(serializable);
 
         // TODO sg: Review this: This blocks if there is a connection loss
         return retryUntilConnected(new Callable<String>() {
@@ -334,7 +334,7 @@ public class ZkClient implements Watcher {
         // return _zk.create(path, data, Ids.OPEN_ACL_UNSAFE, mode);
     }
 
-    private byte[] writableToByteArray(final Serializable serializable) throws IOException {
+    private byte[] toByteArray(Serializable serializable) throws IOException {
         ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
         ObjectOutputStream stream = new ObjectOutputStream(byteArrayOS);
         stream.writeObject(serializable);
@@ -424,10 +424,10 @@ public class ZkClient implements Watcher {
      * @throws InterruptedException
      * @throws KeeperException
      */
-    public boolean deleteRecursive(final String path) throws InterruptedException, KeeperException {
+    public boolean deleteRecursive(String path) throws InterruptedException, KeeperException {
         List<String> children;
         try {
-            children = _zk.getChildren(path, false);
+            children = getChildren(path, false);
         } catch (NoNodeException e) {
             return true;
         }
@@ -449,7 +449,7 @@ public class ZkClient implements Watcher {
      * @throws InterruptedException
      * @throws KeeperException
      */
-    public boolean exists(final String path) throws KeeperException, InterruptedException {
+    public boolean exists(String path) throws KeeperException, InterruptedException {
         return exists(path, false);
     }
 
@@ -747,7 +747,7 @@ public class ZkClient implements Watcher {
      * @throws IOException
      */
     public void writeData(final String path, final Serializable serializable) throws KeeperException, InterruptedException, IOException {
-        final byte[] data = writableToByteArray(serializable);
+        final byte[] data = toByteArray(serializable);
         // TODO sg: Review this: This blocks if there is a connection loss
         retryUntilConnected(new Callable<Object>() {
 
