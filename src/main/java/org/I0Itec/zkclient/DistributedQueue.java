@@ -3,7 +3,6 @@ package org.I0Itec.zkclient;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Queue;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -26,8 +25,8 @@ public class DistributedQueue<T extends Serializable> {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     public T poll() throws KeeperException, InterruptedException, IOException {
-        Queue<String> q;
         while (true) {
             List<String> list = _zkClient.getChildren(_root, true);
             if (list.size() == 0) {
