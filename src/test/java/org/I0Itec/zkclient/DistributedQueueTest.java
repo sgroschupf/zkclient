@@ -58,7 +58,7 @@ public class DistributedQueueTest {
         zkServer.join();
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 30000)
     public void testMultipleReadingThreads() throws InterruptedException, IOException, KeeperException {
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
@@ -66,7 +66,7 @@ public class DistributedQueueTest {
 
         final DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(client, "/queue");
 
-        // insert 1000 elements
+        // insert 100 elements
         for (int i = 0; i < 100; i++) {
             distributedQueue.offer(new Long(i));
         }
