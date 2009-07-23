@@ -29,12 +29,12 @@ public class ZkClientTest {
         LOG.info("------------ AFTER -------------");
     }
 
-    @Test(expected = IOException.class, timeout = 10000)
+    @Test(expected = IOException.class, timeout = 5000)
     public void testUnableToConnect() throws Exception {
         LOG.info("--- testUnableToConnect");
         // we are using port 4711 to avoid conflicts with the zk server that is
         // started by the Spring context
-        new ZkClient("localhost:4711", 5000);
+        new ZkClient("localhost:4711", 1000);
     }
 
     @Test

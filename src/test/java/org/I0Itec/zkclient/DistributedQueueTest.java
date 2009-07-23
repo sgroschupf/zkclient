@@ -29,6 +29,29 @@ public class DistributedQueueTest {
         assertEquals(Long.valueOf(17L), distributedQueue.poll());
         assertEquals(Long.valueOf(18L), distributedQueue.poll());
         assertEquals(Long.valueOf(19L), distributedQueue.poll());
+        assertNull(distributedQueue.poll());
+
+        client.close();
+        zkServer.shutdown();
+        zkServer.join();
+    }
+
+    @Test(timeout = 15000)
+    public void testPeek() throws InterruptedException, IOException, KeeperException {
+        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testPeek", 4711);
+        ZkClient client = new ZkClient("localhost:4711", 5000);
+        client.createPersistent("/queue");
+
+        DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(client, "/queue");
+        distributedQueue.offer(17L);
+        distributedQueue.offer(18L);
+
+        assertEquals(Long.valueOf(17L), distributedQueue.peek());
+        assertEquals(Long.valueOf(17L), distributedQueue.peek());
+        assertEquals(Long.valueOf(17L), distributedQueue.poll());
+        assertEquals(Long.valueOf(18L), distributedQueue.peek());
+        assertEquals(Long.valueOf(18L), distributedQueue.poll());
+        assertNull(distributedQueue.peek());
 
         client.close();
         zkServer.shutdown();
