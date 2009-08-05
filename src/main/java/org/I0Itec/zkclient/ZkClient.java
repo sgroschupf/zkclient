@@ -22,7 +22,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
@@ -55,6 +54,10 @@ public class ZkClient implements Watcher {
     public ZkClient(String zkServers, int connectionTimeout) throws IOException {
         _connection = new ZkConnection(zkServers);
         connect(connectionTimeout, this);
+    }
+
+    public ZkClient(String serverstring) throws IOException {
+        this(serverstring, Integer.MAX_VALUE);
     }
 
     public void subscribeChildChanges(final String path, final IZkChildListener listener) throws KeeperException, InterruptedException {
