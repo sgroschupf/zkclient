@@ -1,0 +1,187 @@
+package org.I0Itec.zkclient;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooKeeper.States;
+
+public class InMemoryConnection implements IZkConnection {
+
+    private Lock _lock = new ReentrantLock(true);
+    private Map<String, byte[]> _data = new HashMap<String, byte[]>();
+    private Set<String> _dataWatches = new HashSet<String>();
+    private Set<String> _nodeWatches = new HashSet<String>();
+    private EventThread _eventThread;
+
+    private class EventThread extends Thread {
+
+        private Watcher _watcher;
+        private BlockingQueue<WatchedEvent> _blockingQueue = new LinkedBlockingDeque<WatchedEvent>();
+
+        public EventThread(Watcher watcher) {
+            _watcher = watcher;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    _watcher.process(_blockingQueue.take());
+                }
+            } catch (InterruptedException e) {
+                // stop event thread
+            }
+        }
+        
+        public void send(WatchedEvent event) {
+            _blockingQueue.add(event);
+        }
+    }
+
+    @Override
+    public void close() throws InterruptedException {
+        _lock.lockInterruptibly();
+        try {
+            if (_eventThread != null) {
+                _eventThread.interrupt();
+                _eventThread.join();
+                _eventThread = null;
+            }
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public void connect(Watcher watcher) throws IOException {
+        _lock.lock();
+        try {
+            if (_eventThread != null) {
+                throw new IllegalStateException("Already connected.");
+            }
+            _eventThread = new EventThread(watcher);
+            _eventThread.start();
+            _eventThread.send(new WatchedEvent(null, KeeperState.SyncConnected, null));
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException {
+        _lock.lock();
+        try {
+            if (exists(path, false)) {
+                throw new KeeperException.NodeExistsException();
+            }
+            
+            _data.put(path, data);
+            checkWatch(_nodeWatches, path, EventType.NodeCreated);
+            return path;
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public void delete(String path) throws InterruptedException, KeeperException {
+        _lock.lock();
+        try {
+            if (!exists(path, false)) {
+                throw new KeeperException.NoNodeException();
+            }
+            
+            _data.remove(path);
+            checkWatch(_nodeWatches, path, EventType.NodeDeleted);
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean exists(String path, boolean watch) throws KeeperException, InterruptedException {
+        _lock.lock();
+        try {
+            if (watch) {
+                installWatch(_nodeWatches, path);
+            }
+            return _data.containsKey(path);
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    private void installWatch(Set<String> watches, String path) {
+        watches.add(path);
+    }
+
+    @Override
+    public List<String> getChildren(String path, boolean watch) throws KeeperException, InterruptedException {
+        if (watch) {
+            throw new UnsupportedOperationException();
+        }
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public States getZookeeperState() {
+        _lock.lock();
+        try {
+            if (_eventThread == null) {
+                return States.CLOSED;
+            }
+            return States.CONNECTED;
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public byte[] readData(String path, boolean watch) throws KeeperException, InterruptedException {
+        if (watch) {
+            installWatch(_dataWatches, path);
+        }
+        _lock.lock();
+        try {
+            return _data.get(path);
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public void writeData(String path, byte[] data) throws KeeperException, InterruptedException {
+        _lock.lock();
+        try {
+            checkWatch(_dataWatches, path, EventType.NodeDataChanged);
+            if (!exists(path, false)) {
+                throw new KeeperException.NoNodeException();
+            }
+            _data.put(path, data);
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    private void checkWatch(Set<String> watches, String path, EventType eventType) {
+        if (watches.contains(path)) {
+            watches.remove(path);
+            _eventThread.send(new WatchedEvent(eventType, KeeperState.SyncConnected, path));
+        }
+    }
+}

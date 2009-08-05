@@ -37,12 +37,12 @@ public class ContentWatcherTest {
         _zkClient.createPersistent(FILE_NAME, "a");
         ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
-        assertEquals("a", watcher.getContent().toString());
+        assertEquals("a", watcher.getContent());
 
         // update the content
         _zkClient.writeData(FILE_NAME, "b");
         Thread.sleep(200);
-        assertEquals("b", watcher.getContent().toString());
+        assertEquals("b", watcher.getContent());
         watcher.stop();
     }
 

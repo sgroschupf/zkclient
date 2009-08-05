@@ -3,7 +3,6 @@ package org.I0Itec.zkclient;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
@@ -39,7 +38,7 @@ public class DistributedQueue<T extends Serializable> {
 
     public boolean offer(T element) {
         try {
-            _zkClient.create(_root + "/" + ELEMENT_NAME + "-", element, CreateMode.PERSISTENT_SEQUENTIAL);
+            _zkClient.createPersistentSequential(_root + "/" + ELEMENT_NAME + "-", element);
         } catch (Exception e) {
             throw ExceptionUtil.convertToRuntimeException(e);
         }
@@ -77,14 +76,14 @@ public class DistributedQueue<T extends Serializable> {
     }
 
     public boolean isEmpty() throws KeeperException, InterruptedException {
-        return _zkClient.getChildren(_root, false).size() == 0;
+        return _zkClient.getChildren(_root).size() == 0;
     }
 
     @SuppressWarnings("unchecked")
     private Element<T> getFirstElement() {
         try {
             while (true) {
-                List<String> list = _zkClient.getChildren(_root, true);
+                List<String> list = _zkClient.getChildren(_root);
                 if (list.size() == 0) {
                     return null;
                 }
