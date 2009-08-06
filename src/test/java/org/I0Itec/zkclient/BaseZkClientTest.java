@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
@@ -16,27 +15,23 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ZkClientTest {
+public abstract class BaseZkClientTest {
 
-	private static final Logger LOG = Logger.getLogger(ZkClientTest.class);
-	private ZkServer _zkServer;
-	private ZkClient _client;
-	private AtomicInteger _counter = new AtomicInteger();
+	private static final Logger LOG = Logger.getLogger(BaseZkClientTest.class);
+	protected ZkServer _zkServer;
+	protected ZkClient _client;
 
 	@Before
 	public void setUp() throws InterruptedException, IOException,
 			KeeperException {
 		LOG.info("------------ BEFORE -------------");
-		_zkServer = ZkTestUtil.startZkServer("ZkClientTest_"+_counter.addAndGet(1), 4711);
-		_client = new ZkClient("localhost:4711", 5000);
+
 	}
 
 	@After
 	public void tearDown() throws InterruptedException {
 		LOG.info("------------ AFTER -------------");
-		_client.close();
-		_zkServer.shutdown();
-		_zkServer.join();
+
 	}
 
 	@Test(expected = IOException.class, timeout = 5000)
@@ -72,7 +67,6 @@ public class ZkClientTest {
 	@Test
 	public void testDeleteRecursive() throws Exception {
 		LOG.info("--- testDeleteRecursive");
-		ZkClient _client = new ZkClient("localhost:4711", 5000);
 		// should be able to call this on a not existing directory
 		_client.deleteRecursive("/doesNotExist");
 	}

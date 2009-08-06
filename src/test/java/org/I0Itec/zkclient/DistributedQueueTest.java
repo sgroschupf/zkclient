@@ -17,7 +17,7 @@ public class DistributedQueueTest {
 
     @Test(timeout = 15000)
     public void testDistributedQueue() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
+        ZkServer zkServer = ZkTestUtil.startZkServer("BaseZkClientTest-testDistributedQueue", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
         client.createPersistent("/queue");
 
@@ -38,7 +38,7 @@ public class DistributedQueueTest {
 
     @Test(timeout = 15000)
     public void testPeek() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testPeek", 4711);
+        ZkServer zkServer = ZkTestUtil.startZkServer("BaseZkClientTest-testPeek", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
         client.createPersistent("/queue");
 
@@ -60,7 +60,7 @@ public class DistributedQueueTest {
 
     @Test(timeout = 30000)
     public void testMultipleReadingThreads() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
+        ZkServer zkServer = ZkTestUtil.startZkServer("BaseZkClientTest-testDistributedQueue", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
         client.createPersistent("/queue");
 
