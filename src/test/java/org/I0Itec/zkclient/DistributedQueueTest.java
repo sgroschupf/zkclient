@@ -32,7 +32,6 @@ public class DistributedQueueTest {
         assertNull(distributedQueue.poll());
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test(timeout = 15000)
@@ -53,7 +52,6 @@ public class DistributedQueueTest {
         assertNull(distributedQueue.peek());
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test(timeout = 30000)
@@ -104,6 +102,5 @@ public class DistributedQueueTest {
         assertEquals(100, readElements.size());
 
         zkServer.shutdown();
-        zkServer.join();
     }
 }

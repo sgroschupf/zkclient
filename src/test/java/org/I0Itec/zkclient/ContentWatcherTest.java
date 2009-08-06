@@ -27,7 +27,6 @@ public class ContentWatcherTest {
     public void tearDown() throws Exception {
         if (_zkServer != null) {
             _zkServer.shutdown();
-            _zkServer.join();
         }
     }
 

@@ -49,7 +49,6 @@ public class ZkClientTest {
         zkClient.delete(path);
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test
@@ -64,7 +63,6 @@ public class ZkClientTest {
         assertFalse(zkClient.delete(path));
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test
@@ -77,7 +75,6 @@ public class ZkClientTest {
         zkClient.deleteRecursive("/doesNotExist");
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test(timeout = 15000)
@@ -107,7 +104,6 @@ public class ZkClientTest {
 
         zkClient.close();
         zkServer.shutdown();
-        zkServer.join();
         gateway.stop();
     }
 
@@ -131,7 +127,6 @@ public class ZkClientTest {
 
         client.close();
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test
@@ -161,7 +156,6 @@ public class ZkClientTest {
         assertFalse(zkClient.waitUntilExists("/neverCreated", TimeUnit.MILLISECONDS, 100));
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test
@@ -201,7 +195,6 @@ public class ZkClientTest {
         assertEquals("aaa", contentFromHolder);
 
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test(timeout = 150000)
@@ -214,7 +207,7 @@ public class ZkClientTest {
         gateway.start();
 
         // Use a session timeout of 200ms
-        final ZkClient zkClient = new ZkClient("localhost:4712", 200, 1000);
+        final ZkClient zkClient = new ZkClient("localhost:4712", 200, 5000);
 
         gateway.stop();
 
@@ -233,7 +226,6 @@ public class ZkClientTest {
 
         zkClient.close();
         zkServer.shutdown();
-        zkServer.join();
         gateway.stop();
     }
 }
