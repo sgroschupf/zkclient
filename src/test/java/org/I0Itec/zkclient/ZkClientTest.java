@@ -113,10 +113,13 @@ public class ZkClientTest {
     public void testWaitUntilConnected() throws Exception {
         LOG.info("--- testWaitUntilConnected");
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilConnected", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 5000);
 
-        zkServer.shutdown();
-        zkServer.join();
+        Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+        ZkClient client = new ZkClient("localhost:4712", 5000);
+
+        // interrupt the connection
+        gateway.stop();
 
         // the client state should change to KeeperState.Disconnected
         assertTrue(client.waitForKeeperState(KeeperState.Disconnected, 1, TimeUnit.SECONDS));

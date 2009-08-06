@@ -92,18 +92,20 @@ public class ContentWatcherTest {
 
     @Test(timeout = 15000)
     public void testHandlingOfConnectionLoss() throws Exception {
-        final ZkClient zkClient = new ZkClient("localhost:4711", 5000);
+        final Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+        final ZkClient zkClient = new ZkClient("localhost:4712", 5000);
 
-        _zkServer.shutdown();
-        _zkServer.join();
+        // disconnect
+        gateway.stop();
 
-        // start server in 250ms
+        // reconnect after 250ms and create file with content
         new Thread() {
             @Override
             public void run() {
                 try {
                     Thread.sleep(250);
-                    _zkServer.start();
+                    gateway.start();
                     zkClient.createPersistent(FILE_NAME, "aaa");
                 } catch (Exception e) {
                     // ignore
@@ -117,5 +119,6 @@ public class ContentWatcherTest {
         watcher.stop();
 
         zkClient.close();
+        gateway.stop();
     }
 }
