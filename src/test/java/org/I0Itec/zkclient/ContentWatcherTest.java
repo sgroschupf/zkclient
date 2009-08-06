@@ -18,14 +18,11 @@ public class ContentWatcherTest {
     @Before
     public void setUp() throws Exception {
         _zkServer = ZkTestUtil.startZkServer("ContentWatcherTest", 4711);
-        _zkClient = new ZkClient("localhost:4711", 5000);
+        _zkClient = _zkServer.getZkClient();
     }
 
     @After
     public void tearDown() throws Exception {
-        if (_zkClient != null) {
-            _zkClient.close();
-        }
         if (_zkServer != null) {
             _zkServer.shutdown();
             _zkServer.join();
@@ -85,6 +82,8 @@ public class ContentWatcherTest {
 
     @Test(timeout = 15000)
     public void testHandlingOfConnectionLoss() throws Exception {
+        final ZkClient zkClient = new ZkClient("localhost:4711", 5000);
+
         _zkServer.shutdown();
         _zkServer.join();
 
@@ -95,16 +94,18 @@ public class ContentWatcherTest {
                 try {
                     Thread.sleep(250);
                     _zkServer.start();
-                    _zkClient.createPersistent(FILE_NAME, "aaa");
+                    zkClient.createPersistent(FILE_NAME, "aaa");
                 } catch (Exception e) {
                     // ignore
                 }
             }
         }.start();
 
-        ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
+        ContentWatcher<String> watcher = new ContentWatcher<String>(zkClient, FILE_NAME);
         watcher.start();
         assertEquals("aaa", watcher.getContent());
         watcher.stop();
+        
+        zkClient.close();
     }
 }

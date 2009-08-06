@@ -1,8 +1,6 @@
 package org.I0Itec.zkclient;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -42,15 +40,14 @@ public class ZkClientTest {
     public void testWriteAndRead() throws Exception {
         LOG.info("--- testWriteAndRead");
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWriteAndRead", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 5000);
+        ZkClient zkClient = zkServer.getZkClient();
         String data = "something";
         String path = "/a";
-        client.createPersistent(path, data);
-        String data2 = client.readData(path);
+        zkClient.createPersistent(path, data);
+        String data2 = zkClient.readData(path);
         Assert.assertEquals(data, data2);
-        client.delete(path);
+        zkClient.delete(path);
 
-        client.close();
         zkServer.shutdown();
         zkServer.join();
     }
@@ -59,14 +56,13 @@ public class ZkClientTest {
     public void testDelete() throws Exception {
         LOG.info("--- testDelete");
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDelete", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 5000);
+        ZkClient zkClient = zkServer.getZkClient();
         String path = "/a";
-        assertFalse(client.delete(path));
-        client.createPersistent(path, null);
-        assertTrue(client.delete(path));
-        assertFalse(client.delete(path));
+        assertFalse(zkClient.delete(path));
+        zkClient.createPersistent(path, null);
+        assertTrue(zkClient.delete(path));
+        assertFalse(zkClient.delete(path));
 
-        client.close();
         zkServer.shutdown();
         zkServer.join();
     }
@@ -75,12 +71,11 @@ public class ZkClientTest {
     public void testDeleteRecursive() throws Exception {
         LOG.info("--- testDeleteRecursive");
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDeleteRecursive", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 5000);
+        ZkClient zkClient = zkServer.getZkClient();
 
         // should be able to call this on a not existing directory
-        client.deleteRecursive("/doesNotExist");
+        zkClient.deleteRecursive("/doesNotExist");
 
-        client.close();
         zkServer.shutdown();
         zkServer.join();
     }
@@ -138,7 +133,7 @@ public class ZkClientTest {
     public void testWaitUntilExists() throws InterruptedException, IOException, KeeperException {
         LOG.info("--- testWaitUntilExists");
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
-        final ZkClient client = new ZkClient("localhost:4711", 5000);
+        final ZkClient zkClient = zkServer.getZkClient();
 
         // create /gaga node asynchronously
         new Thread() {
@@ -146,7 +141,7 @@ public class ZkClientTest {
             public void run() {
                 try {
                     Thread.sleep(100);
-                    client.createPersistent("/gaga");
+                    zkClient.createPersistent("/gaga");
                 } catch (Exception e) {
                     // ignore
                 }
@@ -154,13 +149,12 @@ public class ZkClientTest {
         }.start();
 
         // wait until this was created
-        assertTrue(client.waitUntilExists("/gaga", TimeUnit.SECONDS, 5));
-        assertTrue(client.exists("/gaga"));
+        assertTrue(zkClient.waitUntilExists("/gaga", TimeUnit.SECONDS, 5));
+        assertTrue(zkClient.exists("/gaga"));
 
         // waiting for /neverCreated should timeout
-        assertFalse(client.waitUntilExists("/neverCreated", TimeUnit.MILLISECONDS, 100));
+        assertFalse(zkClient.waitUntilExists("/neverCreated", TimeUnit.MILLISECONDS, 100));
 
-        client.close();
         zkServer.shutdown();
         zkServer.join();
     }
@@ -168,7 +162,7 @@ public class ZkClientTest {
     @Test
     public void testDataChanges() throws InterruptedException, IOException, KeeperException {
         ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
-        final ZkClient client = new ZkClient("localhost:4711", 5000);
+        final ZkClient zkClient = zkServer.getZkClient();
         String path = "/a";
         final Holder<String> holder = new Holder<String>();
 
@@ -186,13 +180,12 @@ public class ZkClientTest {
                 holder.set(data);
             }
         };
-        client.subscribeDataChanges(path, listener);
-        client.createPersistent(path, "aaa");
+        zkClient.subscribeDataChanges(path, listener);
+        zkClient.createPersistent(path, "aaa");
         // wait some time to make sure the event was triggered
         Thread.sleep(500);
         assertEquals("aaa", holder.get());
 
-        client.close();
         zkServer.shutdown();
         zkServer.join();
     }
