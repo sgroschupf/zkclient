@@ -39,7 +39,7 @@ public class ZkClientTest {
     @Test
     public void testWriteAndRead() throws Exception {
         LOG.info("--- testWriteAndRead");
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWriteAndRead", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWriteAndRead", 4711);
         ZkClient zkClient = zkServer.getZkClient();
         String data = "something";
         String path = "/a";
@@ -55,7 +55,7 @@ public class ZkClientTest {
     @Test
     public void testDelete() throws Exception {
         LOG.info("--- testDelete");
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDelete", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDelete", 4711);
         ZkClient zkClient = zkServer.getZkClient();
         String path = "/a";
         assertFalse(zkClient.delete(path));
@@ -70,7 +70,7 @@ public class ZkClientTest {
     @Test
     public void testDeleteRecursive() throws Exception {
         LOG.info("--- testDeleteRecursive");
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testDeleteRecursive", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDeleteRecursive", 4711);
         ZkClient zkClient = zkServer.getZkClient();
 
         // should be able to call this on a not existing directory
@@ -83,7 +83,7 @@ public class ZkClientTest {
     @Test(timeout = 15000)
     public void testRetryUntilConnected() throws Exception {
         LOG.info("--- testRetryUntilConnected");
-        final ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testRetryUntilConnected", 4711);
+        final ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testRetryUntilConnected", 4711);
         final ZkConnection connection = new ZkConnection("localhost:4711");
         final ZkClient client = new ZkClient(connection);
 
@@ -112,7 +112,7 @@ public class ZkClientTest {
     @Test(timeout = 15000)
     public void testWaitUntilConnected() throws Exception {
         LOG.info("--- testWaitUntilConnected");
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWaitUntilConnected", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilConnected", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
 
         zkServer.shutdown();
@@ -132,7 +132,7 @@ public class ZkClientTest {
     @Test
     public void testWaitUntilExists() throws InterruptedException, IOException, KeeperException {
         LOG.info("--- testWaitUntilExists");
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
         final ZkClient zkClient = zkServer.getZkClient();
 
         // create /gaga node asynchronously
@@ -160,8 +160,8 @@ public class ZkClientTest {
     }
 
     @Test
-    public void testDataChanges() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
+    public void testDataChanges() throws Exception {
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
         final ZkClient zkClient = zkServer.getZkClient();
         String path = "/a";
         final Holder<String> holder = new Holder<String>();
@@ -182,9 +182,17 @@ public class ZkClientTest {
         };
         zkClient.subscribeDataChanges(path, listener);
         zkClient.createPersistent(path, "aaa");
+
         // wait some time to make sure the event was triggered
-        Thread.sleep(500);
-        assertEquals("aaa", holder.get());
+        String contentFromHolder = TestUtil.waitUntil("b", new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return holder.get();
+            }
+        }, TimeUnit.SECONDS, 5);
+
+        assertEquals("aaa", contentFromHolder);
 
         zkServer.shutdown();
         zkServer.join();

@@ -3,6 +3,8 @@ package org.I0Itec.zkclient;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -17,7 +19,7 @@ public class ContentWatcherTest {
 
     @Before
     public void setUp() throws Exception {
-        _zkServer = ZkTestUtil.startZkServer("ContentWatcherTest", 4711);
+        _zkServer = TestUtil.startZkServer("ContentWatcherTest", 4711);
         _zkClient = _zkServer.getZkClient();
     }
 
@@ -30,16 +32,24 @@ public class ContentWatcherTest {
     }
 
     @Test
-    public void testGetContent() throws InterruptedException, KeeperException, IOException {
+    public void testGetContent() throws Exception {
         _zkClient.createPersistent(FILE_NAME, "a");
-        ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
+        final ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
         assertEquals("a", watcher.getContent());
 
         // update the content
         _zkClient.writeData(FILE_NAME, "b");
-        Thread.sleep(200);
-        assertEquals("b", watcher.getContent());
+
+        String contentFromWatcher = TestUtil.waitUntil("b", new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return watcher.getContent();
+            }
+        }, TimeUnit.SECONDS, 5);
+
+        assertEquals("b", contentFromWatcher);
         watcher.stop();
     }
 
@@ -105,7 +115,7 @@ public class ContentWatcherTest {
         watcher.start();
         assertEquals("aaa", watcher.getContent());
         watcher.stop();
-        
+
         zkClient.close();
     }
 }
