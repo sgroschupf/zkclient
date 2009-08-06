@@ -83,11 +83,15 @@ public class TestUtil {
     }
 
     public static ZkServer startZkServer(String testName, int port) throws InterruptedException, IOException, KeeperException {
+        return startZkServer(testName, port, ZkServer.DEFAULT_TICK_TIME);
+    }
+    
+    public static ZkServer startZkServer(String testName, int port, int tickTime) throws InterruptedException, IOException, KeeperException {
         String dataPath = "./build/test/" + testName + "/data";
         String logPath = "./build/test/" + testName + "/log";
         FileUtils.deleteDirectory(new File(dataPath));
         FileUtils.deleteDirectory(new File(logPath));
-        ZkServer zkServer = new ZkServer(dataPath, logPath, mock(IDefaultNameSpace.class), port);
+        ZkServer zkServer = new ZkServer(dataPath, logPath, mock(IDefaultNameSpace.class), port, tickTime);
         zkServer.start();
         return zkServer;
     }

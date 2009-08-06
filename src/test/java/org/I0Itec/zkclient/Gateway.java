@@ -17,6 +17,7 @@ public class Gateway {
         }
         _thread = new GatewayThread(_port, _destinationPort);
         _thread.start();
+        _thread.awaitUp();
     }
 
     public synchronized void stop() {

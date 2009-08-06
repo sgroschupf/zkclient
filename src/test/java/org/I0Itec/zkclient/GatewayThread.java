@@ -6,6 +6,12 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -16,19 +22,29 @@ public class GatewayThread extends Thread {
     private final int _port;
     private final int _destinationPort;
     private ServerSocket _serverSocket;
+    private Lock _lock = new ReentrantLock();
+    private Condition _runningCondition = _lock.newCondition();
+    private boolean _running = false;
 
     public GatewayThread(int port, int destinationPort) {
         _port = port;
         _destinationPort = destinationPort;
+        setDaemon(true);
     }
 
     @Override
     public void run() {
-        Thread readThread = null;
-        Thread writeThread = null;
+        final List<Thread> runningThreads = new Vector<Thread>();
         try {
             LOG.info("starting gateway on port " + _port + " pointing to port " + _destinationPort);
             _serverSocket = new ServerSocket(_port);
+            _lock.lock();
+            try {
+                _running = true;
+                _runningCondition.signalAll();
+            } finally {
+                _lock.unlock();
+            }
             while (true) {
                 final Socket socket = _serverSocket.accept();
                 LOG.info("new client is connected " + socket.getInetAddress());
@@ -45,9 +61,10 @@ public class GatewayThread extends Thread {
                 final InputStream outgoingInputStream = outgoingSocket.getInputStream();
                 final OutputStream outgoingOutputStream = outgoingSocket.getOutputStream();
 
-                writeThread = new Thread() {
+                Thread writeThread = new Thread() {
                     @Override
                     public void run() {
+                        runningThreads.add(this);
                         try {
                             int read = -1;
                             while ((read = incomingInputStream.read()) != -1) {
@@ -55,6 +72,8 @@ public class GatewayThread extends Thread {
                             }
                         } catch (IOException e) {
                             //
+                        } finally {
+                            runningThreads.remove(this);
                         }
                         LOG.info("write thread terminated");
                     }
@@ -72,9 +91,10 @@ public class GatewayThread extends Thread {
                     }
                 };
 
-                readThread = new Thread() {
+                Thread readThread = new Thread() {
                     @Override
                     public void run() {
+                        runningThreads.add(this);
                         try {
                             int read = -1;
                             while ((read = outgoingInputStream.read()) != -1) {
@@ -82,6 +102,8 @@ public class GatewayThread extends Thread {
                             }
                         } catch (IOException e) {
                             //
+                        } finally {
+                            runningThreads.remove(this);
                         }
                         LOG.info("read thread terminated");
                     }
@@ -98,18 +120,11 @@ public class GatewayThread extends Thread {
         } catch (Exception e) {
             LOG.error("error on gateway execution", e);
         }
-        if (writeThread != null) {
-            writeThread.interrupt();
+        
+        for (Thread thread : new ArrayList<Thread>(runningThreads)) {
+            thread.interrupt();
             try {
-                writeThread.join();
-            } catch (InterruptedException e) {
-                // ignore
-            }
-        }
-        if (readThread != null) {
-            readThread.interrupt();
-            try {
-                readThread.join();
+                thread.join();
             } catch (InterruptedException e) {
                 // ignore
             }
@@ -131,4 +146,16 @@ public class GatewayThread extends Thread {
         join();
     }
 
+    public void awaitUp() {
+        _lock.lock();
+        try {
+            while (!_running) {
+                _runningCondition.await();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            _lock.unlock();
+        }
+    }
 }

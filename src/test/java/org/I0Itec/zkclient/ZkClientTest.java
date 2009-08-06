@@ -84,29 +84,31 @@ public class ZkClientTest {
     public void testRetryUntilConnected() throws Exception {
         LOG.info("--- testRetryUntilConnected");
         final ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testRetryUntilConnected", 4711);
-        final ZkConnection connection = new ZkConnection("localhost:4711");
-        final ZkClient client = new ZkClient(connection);
+        Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+        final ZkConnection zkConnection = new ZkConnection("localhost:4712");
+        final ZkClient zkClient = new ZkClient(zkConnection, 1000);
 
-        zkServer.shutdown();
-        zkServer.join();
+        gateway.stop();
 
         // start server in 250ms
-        new DeferredZookeeperStarter(zkServer, 250).start();
+        new DeferredGatewayStarter(gateway, 250).start();
 
         // this should work as soon as the connection is reestablished, if it
         // fails it throws a ConnectionLossException
-        client.retryUntilConnected(new Callable<Object>() {
+        zkClient.retryUntilConnected(new Callable<Object>() {
 
             @Override
             public Object call() throws Exception {
-                connection.exists("/a", false);
+                zkConnection.exists("/a", false);
                 return null;
             }
         });
 
-        client.close();
+        zkClient.close();
         zkServer.shutdown();
         zkServer.join();
+        gateway.stop();
     }
 
     @Test(timeout = 15000)
@@ -164,6 +166,7 @@ public class ZkClientTest {
 
     @Test
     public void testDataChanges() throws Exception {
+        LOG.info("--- testDataChanges");
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
         final ZkClient zkClient = zkServer.getZkClient();
         String path = "/a";
@@ -199,5 +202,38 @@ public class ZkClientTest {
 
         zkServer.shutdown();
         zkServer.join();
+    }
+
+    @Test(timeout = 150000)
+    public void testRetryUntilConnected_SessionExpiredException() throws InterruptedException, IOException, KeeperException {
+        LOG.info("--- testRetryUntilConnected_SessionExpiredException");
+        
+        // Use a tick time of 100ms, because the minimum session timeout is 2 x tick-time.
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testSessionExpiredException", 4711, 100);
+        Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+
+        // Use a session timeout of 200ms
+        final ZkClient zkClient = new ZkClient("localhost:4712", 200, 1000);
+
+        gateway.stop();
+
+        // Start server in 600ms, the session should have expired by then
+        new DeferredGatewayStarter(gateway, 600).start();
+
+        // This should work as soon as a new session has been created (and the connection is reestablished), if it fails it throws a SessionExpiredException
+        zkClient.retryUntilConnected(new Callable<Object>() {
+
+            @Override
+            public Object call() throws Exception {
+                zkClient.exists("/a");
+                return null;
+            }
+        });
+
+        zkClient.close();
+        zkServer.shutdown();
+        zkServer.join();
+        gateway.stop();
     }
 }

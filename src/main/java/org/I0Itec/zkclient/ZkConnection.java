@@ -12,15 +12,19 @@ import org.apache.zookeeper.ZooKeeper.States;
 
 public class ZkConnection implements IZkConnection {
 
-    private static final int DEFAULT_TIMEOUT = 5000;
+    private static final int DEFAULT_SESSION_TIMEOUT = 500;
     private ZooKeeper _zk = null;
 
     private final String _servers;
     private final int _sessionTimeOut;
 
     public ZkConnection(String zkServers) {
+        this(zkServers, DEFAULT_SESSION_TIMEOUT);
+    }
+
+    public ZkConnection(String zkServers, int sessionTimeOut) {
         _servers = zkServers;
-        _sessionTimeOut = DEFAULT_TIMEOUT;
+        _sessionTimeOut = sessionTimeOut;
     }
 
     @Override
@@ -66,4 +70,7 @@ public class ZkConnection implements IZkConnection {
         return _zk != null ? _zk.getState() : null;
     }
 
+    public ZooKeeper getZookeeper() {
+        return _zk;
+    }
 }

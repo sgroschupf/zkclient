@@ -24,6 +24,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 
@@ -45,11 +46,18 @@ public class ZkClient implements Watcher {
     private boolean _shutdownTriggered;
 
     public ZkClient(IZkConnection connection) throws IOException {
-        _connection = connection;
-        connect(Integer.MAX_VALUE, this);
+        this(connection, Integer.MAX_VALUE);
     }
 
-    // <listeners>
+    public ZkClient(IZkConnection connection, int connectionTimeout) throws IOException {
+        _connection = connection;
+        connect(connectionTimeout, this);
+    }
+
+    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) throws IOException {
+        _connection = new ZkConnection(zkServers, sessionTimeout);
+        connect(connectionTimeout, this);
+    }
 
     public ZkClient(String zkServers, int connectionTimeout) throws IOException {
         _connection = new ZkConnection(zkServers);
@@ -463,8 +471,11 @@ public class ZkClient implements Watcher {
             try {
                 return callable.call();
             } catch (ConnectionLossException e) {
-                // we give the event thread some time to update the status to
-                // disconnected
+                // we give the event thread some time to update the status to 'Disconnected'
+                Thread.yield();
+                waitUntilConnected();
+            } catch (SessionExpiredException e) {
+                // we give the event thread some time to update the status to 'Expired'
                 Thread.yield();
                 waitUntilConnected();
             } catch (KeeperException e) {
