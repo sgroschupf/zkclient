@@ -29,8 +29,7 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 
 /**
- * Abstracts the interaction with zookeeper and allows permanent (not just one
- * time) watches on nodes in ZooKeeper
+ * Abstracts the interaction with zookeeper and allows permanent (not just one time) watches on nodes in ZooKeeper
  * 
  */
 public class ZkClient implements Watcher {
@@ -204,6 +203,15 @@ public class ZkClient implements Watcher {
         } finally {
             if (stateChanged) {
                 getEventLock().getStateChangedCondition().signalAll();
+
+                // If the session expired we have to signal all conditions, because watches might have been removed and there is no guarantee that those
+                // conditions will be signaled at all after an Expired event
+                // TODO PVo write a test for this
+                if (event.getState() == KeeperState.Expired) {
+                    getEventLock().getZNodeEventCondition().signalAll();
+                    getEventLock().getDataChangedCondition().signalAll();
+                }
+                // TODO PVo we also have to notify all listeners that something might have changed
             }
             if (znodeChanged) {
                 getEventLock().getZNodeEventCondition().signalAll();
@@ -374,8 +382,7 @@ public class ZkClient implements Watcher {
     /*
      * (non-Javadoc)
      * 
-     * @see org.I0Itec.zkclient.IZkClient#waitUntilExists(java.lang.String,
-     * java.util.concurrent.TimeUnit, long)
+     * @see org.I0Itec.zkclient.IZkClient#waitUntilExists(java.lang.String, java.util.concurrent.TimeUnit, long)
      */
     public boolean waitUntilExists(String path, TimeUnit timeUnit, long time) throws InterruptedException, KeeperException {
         Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
@@ -496,10 +503,8 @@ public class ZkClient implements Watcher {
     }
 
     /**
-     * Returns a mutex all zookeeper events are synchronized aginst. So in case
-     * you need to do something without getting any zookeeper event interruption
-     * synchronize against this mutex. Also all threads waiting on this mutex
-     * object will be notified on an event.
+     * Returns a mutex all zookeeper events are synchronized aginst. So in case you need to do something without getting any zookeeper event interruption
+     * synchronize against this mutex. Also all threads waiting on this mutex object will be notified on an event.
      * 
      * @return the mutex.
      */
