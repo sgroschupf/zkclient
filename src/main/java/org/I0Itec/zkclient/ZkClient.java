@@ -244,14 +244,18 @@ public class ZkClient implements Watcher {
         return childCount;
     }
 
-    public boolean exists(final String path) throws KeeperException, InterruptedException {
+    private boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException {
         return retryUntilConnected(new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
-                return _connection.exists(path, hasListeners(path));
+                return _connection.exists(path, watch);
             }
         });
+    }
+
+    public boolean exists(final String path) throws KeeperException, InterruptedException {
+        return exists(path, hasListeners(path));
     }
 
     private void processStateChanged(WatchedEvent event) {
@@ -379,25 +383,19 @@ public class ZkClient implements Watcher {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.I0Itec.zkclient.IZkClient#waitUntilExists(java.lang.String, java.util.concurrent.TimeUnit, long)
-     */
     public boolean waitUntilExists(String path, TimeUnit timeUnit, long time) throws InterruptedException, KeeperException {
         Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
         LOG.info("Waiting until znode '" + path + "' becomes available.");
-        getEventLock().lockInterruptibly();
         if (exists(path)) {
             return true;
         }
+        getEventLock().lockInterruptibly();
         try {
-            boolean stillWaiting = true;
-            while (!exists(path)) {
-                if (!stillWaiting) {
+            while (!exists(path, true)) {
+                boolean gotSignal = getEventLock().getZNodeEventCondition().awaitUntil(timeout);
+                if (!gotSignal) {
                     return false;
                 }
-                stillWaiting = getEventLock().getZNodeEventCondition().awaitUntil(timeout);
             }
             return true;
         } finally {
@@ -529,8 +527,9 @@ public class ZkClient implements Watcher {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Serializable> T readData(final String path) throws KeeperException, InterruptedException, IOException {
-        return readData(path, hasListeners(path));
+        return (T) readData(path, hasListeners(path));
     }
 
     @SuppressWarnings("unchecked")
