@@ -13,7 +13,7 @@ public class ServerZkClientTest extends BaseZkClientTest {
 	public void setUp() throws InterruptedException, IOException,
 			KeeperException {
 		super.setUp();
-		_zkServer = ZkTestUtil.startZkServer("ZkClientTest_"
+		_zkServer = TestUtil.startZkServer("ZkClientTest_"
 				+ _counter.addAndGet(1), 4711);
 		_client = new ZkClient("localhost:4711", 5000);
 	}
@@ -23,6 +23,5 @@ public class ServerZkClientTest extends BaseZkClientTest {
 		super.tearDown();
 		_client.close();
 		_zkServer.shutdown();
-		_zkServer.join();
 	}
 }

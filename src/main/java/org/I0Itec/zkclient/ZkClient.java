@@ -24,12 +24,12 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 
 /**
- * Abstracts the interaction with zookeeper and allows permanent (not just one
- * time) watches on nodes in ZooKeeper
+ * Abstracts the interaction with zookeeper and allows permanent (not just one time) watches on nodes in ZooKeeper
  * 
  */
 public class ZkClient implements Watcher {
@@ -45,11 +45,18 @@ public class ZkClient implements Watcher {
     private boolean _shutdownTriggered;
 
     public ZkClient(IZkConnection connection) throws IOException {
-        _connection = connection;
-        connect(Integer.MAX_VALUE, this);
+        this(connection, Integer.MAX_VALUE);
     }
 
-    // <listeners>
+    public ZkClient(IZkConnection connection, int connectionTimeout) throws IOException {
+        _connection = connection;
+        connect(connectionTimeout, this);
+    }
+
+    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) throws IOException {
+        _connection = new ZkConnection(zkServers, sessionTimeout);
+        connect(connectionTimeout, this);
+    }
 
     public ZkClient(String zkServers, int connectionTimeout) throws IOException {
         _connection = new ZkConnection(zkServers);
@@ -196,6 +203,15 @@ public class ZkClient implements Watcher {
         } finally {
             if (stateChanged) {
                 getEventLock().getStateChangedCondition().signalAll();
+
+                // If the session expired we have to signal all conditions, because watches might have been removed and there is no guarantee that those
+                // conditions will be signaled at all after an Expired event
+                // TODO PVo write a test for this
+                if (event.getState() == KeeperState.Expired) {
+                    getEventLock().getZNodeEventCondition().signalAll();
+                    getEventLock().getDataChangedCondition().signalAll();
+                }
+                // TODO PVo we also have to notify all listeners that something might have changed
             }
             if (znodeChanged) {
                 getEventLock().getZNodeEventCondition().signalAll();
@@ -228,14 +244,18 @@ public class ZkClient implements Watcher {
         return childCount;
     }
 
-    public boolean exists(final String path) throws KeeperException, InterruptedException {
+    private boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException {
         return retryUntilConnected(new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
-                return _connection.exists(path, hasListeners(path));
+                return _connection.exists(path, watch);
             }
         });
+    }
+
+    public boolean exists(final String path) throws KeeperException, InterruptedException {
+        return exists(path, hasListeners(path));
     }
 
     private void processStateChanged(WatchedEvent event) {
@@ -363,26 +383,19 @@ public class ZkClient implements Watcher {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.I0Itec.zkclient.IZkClient#waitUntilExists(java.lang.String,
-     * java.util.concurrent.TimeUnit, long)
-     */
     public boolean waitUntilExists(String path, TimeUnit timeUnit, long time) throws InterruptedException, KeeperException {
         Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
         LOG.info("Waiting until znode '" + path + "' becomes available.");
-        getEventLock().lockInterruptibly();
         if (exists(path)) {
             return true;
         }
+        getEventLock().lockInterruptibly();
         try {
-            boolean stillWaiting = true;
-            while (!exists(path)) {
-                if (!stillWaiting) {
+            while (!exists(path, true)) {
+                boolean gotSignal = getEventLock().getZNodeEventCondition().awaitUntil(timeout);
+                if (!gotSignal) {
                     return false;
                 }
-                stillWaiting = getEventLock().getZNodeEventCondition().awaitUntil(timeout);
             }
             return true;
         } finally {
@@ -463,8 +476,11 @@ public class ZkClient implements Watcher {
             try {
                 return callable.call();
             } catch (ConnectionLossException e) {
-                // we give the event thread some time to update the status to
-                // disconnected
+                // we give the event thread some time to update the status to 'Disconnected'
+                Thread.yield();
+                waitUntilConnected();
+            } catch (SessionExpiredException e) {
+                // we give the event thread some time to update the status to 'Expired'
                 Thread.yield();
                 waitUntilConnected();
             } catch (KeeperException e) {
@@ -485,10 +501,8 @@ public class ZkClient implements Watcher {
     }
 
     /**
-     * Returns a mutex all zookeeper events are synchronized aginst. So in case
-     * you need to do something without getting any zookeeper event interruption
-     * synchronize against this mutex. Also all threads waiting on this mutex
-     * object will be notified on an event.
+     * Returns a mutex all zookeeper events are synchronized aginst. So in case you need to do something without getting any zookeeper event interruption
+     * synchronize against this mutex. Also all threads waiting on this mutex object will be notified on an event.
      * 
      * @return the mutex.
      */
@@ -513,8 +527,9 @@ public class ZkClient implements Watcher {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Serializable> T readData(final String path) throws KeeperException, InterruptedException, IOException {
-        return readData(path, hasListeners(path));
+        return (T) readData(path, hasListeners(path));
     }
 
     @SuppressWarnings("unchecked")

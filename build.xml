@@ -48,6 +48,8 @@
 				        output="${build.dir.eclipse-main-classes}" />
 				<source path="${test.src.dir}"
 				        output="${build.dir.eclipse-test-classes}" />
+				<source path="${test.res.dir}"
+				        output="${build.dir.eclipse-test-classes}" />
 
 				<output path="${build.dir.eclipse-main-classes}" />
 				<library pathref="test.path.id" exported="false" />

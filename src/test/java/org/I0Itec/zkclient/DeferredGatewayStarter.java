@@ -1,12 +1,12 @@
 package org.I0Itec.zkclient;
 
-class DeferredZookeeperStarter extends Thread {
+public class DeferredGatewayStarter extends Thread {
 
-    private final ZkServer _zkServer;
+    private final Gateway _zkServer;
     private int _delay;
 
-    DeferredZookeeperStarter(ZkServer zkServer, int delay) {
-        _zkServer = zkServer;
+    public DeferredGatewayStarter(Gateway gateway, int delay) {
+        _zkServer = gateway;
         _delay = delay;
     }
 

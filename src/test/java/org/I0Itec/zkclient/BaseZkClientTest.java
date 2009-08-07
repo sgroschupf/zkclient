@@ -71,28 +71,34 @@ public abstract class BaseZkClientTest {
 		_client.deleteRecursive("/doesNotExist");
 	}
 
-	@Test(timeout = 15000)
-	public void testRetryUntilConnected() throws Exception {
-		LOG.info("--- testRetryUntilConnected");
-		final ZkConnection connection = new ZkConnection("localhost:4711");
-		final ZkClient _client = new ZkClient(connection);
-		_zkServer.shutdown();
-		_zkServer.join();
-
-		// start server in 250ms
-		new DeferredZookeeperStarter(_zkServer, 250).start();
-
-		// this should work as soon as the connection is reestablished, if it
-		// fails it throws a ConnectionLossException
-		_client.retryUntilConnected(new Callable<Object>() {
-
-			@Override
-			public Object call() throws Exception {
-				connection.exists("/a", false);
-				return null;
-			}
-		});
-	}
+	 @Test(timeout = 15000)
+	    public void testRetryUntilConnected() throws Exception {
+	        LOG.info("--- testRetryUntilConnected");
+	        Gateway gateway = new Gateway(4712, 4711);
+	        gateway.start();
+	        final ZkConnection zkConnection = new ZkConnection("localhost:4712");
+	        final ZkClient zkClient = new ZkClient(zkConnection, 1000);
+	 
+	        gateway.stop();
+	 
+	        // start server in 250ms
+	        new DeferredGatewayStarter(gateway, 250).start();
+	 
+	        // this should work as soon as the connection is reestablished, if it
+	        // fails it throws a ConnectionLossException
+	        zkClient.retryUntilConnected(new Callable<Object>() {
+	 
+	            @Override
+	            public Object call() throws Exception {
+	                zkConnection.exists("/a", false);
+	                return null;
+	            }
+	        });
+	 
+	        zkClient.close();
+	        gateway.stop();
+	    }
+	 
 
 	@Test(timeout = 15000)
 	public void testWaitUntilConnected() throws Exception {
@@ -100,7 +106,6 @@ public abstract class BaseZkClientTest {
 		ZkClient _client = new ZkClient("localhost:4711", 5000);
 
 		_zkServer.shutdown();
-		_zkServer.join();
 
 		// the _client state should change to KeeperState.Disconnected
 		assertTrue(_client.waitForKeeperState(KeeperState.Disconnected, 1,

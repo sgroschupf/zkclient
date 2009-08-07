@@ -18,7 +18,7 @@ public class ZkServer {
     private final static Logger LOG = Logger.getLogger(ZkServer.class);
 
     public static final int DEFAULT_PORT = 2181;
-    private static final int DEFAULT_TICK_TIME = 5000;
+    public static final int DEFAULT_TICK_TIME = 5000;
 
     private String _dataDir;
     private String _logDir;
@@ -29,16 +29,22 @@ public class ZkServer {
     private Factory _nioFactory;
     private ZkClient _zkClient;
     private int _port;
+    private int _tickTime;
 
     public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace) {
         this(dataDir, logDir, defaultNameSpace, DEFAULT_PORT);
     }
 
     public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port) {
+        this(dataDir, logDir, defaultNameSpace, port, DEFAULT_TICK_TIME);
+    }
+
+    public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port, int tickTime) {
         _dataDir = dataDir;
         _logDir = logDir;
         _defaultNameSpace = defaultNameSpace;
         _port = port;
+        _tickTime = tickTime;
     }
 
     @PostConstruct
@@ -75,7 +81,6 @@ public class ZkServer {
             }
             // check if this machine is already something running..
             if (NetworkUtil.isPortFree(port)) {
-                final int tickTime = DEFAULT_TICK_TIME;
                 final File dataDir = new File(_dataDir);
                 final File dataLogDir = new File(_logDir);
                 dataDir.mkdirs();
@@ -88,7 +93,7 @@ public class ZkServer {
                 }
                 // single zk server
                 LOG.info("Start single zookeeper server...");
-                startSingleZkServer(tickTime, dataDir, dataLogDir, port);
+                startSingleZkServer(_tickTime, dataDir, dataLogDir, port);
                 LOG.info("data dir: " + dataDir.getAbsolutePath());
                 LOG.info("data log dir: " + dataLogDir.getAbsolutePath());
             } else {
@@ -107,14 +112,8 @@ public class ZkServer {
         }
     }
 
-    public void join() throws InterruptedException {
-        if (_nioFactory != null) {
-            _nioFactory.join();
-        }
-    }
-
     @PreDestroy
-    public void shutdown() {
+    public void shutdown() throws InterruptedException {
         LOG.info("Shutting down server...");
         try {
             _zkClient.close();
@@ -128,6 +127,9 @@ public class ZkServer {
         if (_zk != null) {
             _zk.shutdown();
             _zk = null;
+        }
+        if (_nioFactory != null) {
+            _nioFactory.join();
         }
     }
 

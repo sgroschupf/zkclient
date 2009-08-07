@@ -3,6 +3,8 @@ package org.I0Itec.zkclient;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -17,32 +19,36 @@ public class ContentWatcherTest {
 
     @Before
     public void setUp() throws Exception {
-        _zkServer = ZkTestUtil.startZkServer("ContentWatcherTest", 4711);
-        _zkClient = new ZkClient("localhost:4711", 5000);
+        _zkServer = TestUtil.startZkServer("ContentWatcherTest", 4711);
+        _zkClient = _zkServer.getZkClient();
     }
 
     @After
     public void tearDown() throws Exception {
-        if (_zkClient != null) {
-            _zkClient.close();
-        }
         if (_zkServer != null) {
             _zkServer.shutdown();
-            _zkServer.join();
         }
     }
 
     @Test
-    public void testGetContent() throws InterruptedException, KeeperException, IOException {
+    public void testGetContent() throws Exception {
         _zkClient.createPersistent(FILE_NAME, "a");
-        ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
+        final ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
         assertEquals("a", watcher.getContent());
 
         // update the content
         _zkClient.writeData(FILE_NAME, "b");
-        Thread.sleep(200);
-        assertEquals("b", watcher.getContent());
+
+        String contentFromWatcher = TestUtil.waitUntil("b", new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return watcher.getContent();
+            }
+        }, TimeUnit.SECONDS, 5);
+
+        assertEquals("b", contentFromWatcher);
         watcher.stop();
     }
 
@@ -85,26 +91,33 @@ public class ContentWatcherTest {
 
     @Test(timeout = 15000)
     public void testHandlingOfConnectionLoss() throws Exception {
-        _zkServer.shutdown();
-        _zkServer.join();
+        final Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+        final ZkClient zkClient = new ZkClient("localhost:4712", 5000);
 
-        // start server in 250ms
+        // disconnect
+        gateway.stop();
+
+        // reconnect after 250ms and create file with content
         new Thread() {
             @Override
             public void run() {
                 try {
                     Thread.sleep(250);
-                    _zkServer.start();
-                    _zkClient.createPersistent(FILE_NAME, "aaa");
+                    gateway.start();
+                    zkClient.createPersistent(FILE_NAME, "aaa");
                 } catch (Exception e) {
                     // ignore
                 }
             }
         }.start();
 
-        ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
+        ContentWatcher<String> watcher = new ContentWatcher<String>(zkClient, FILE_NAME);
         watcher.start();
         assertEquals("aaa", watcher.getContent());
         watcher.stop();
+
+        zkClient.close();
+        gateway.stop();
     }
 }

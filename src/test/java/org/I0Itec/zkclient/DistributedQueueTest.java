@@ -17,7 +17,7 @@ public class DistributedQueueTest {
 
     @Test(timeout = 15000)
     public void testDistributedQueue() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("BaseZkClientTest-testDistributedQueue", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("BaseZkClientTest-testDistributedQueue", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
         client.createPersistent("/queue");
 
@@ -31,14 +31,12 @@ public class DistributedQueueTest {
         assertEquals(Long.valueOf(19L), distributedQueue.poll());
         assertNull(distributedQueue.poll());
 
-        client.close();
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test(timeout = 15000)
     public void testPeek() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("BaseZkClientTest-testPeek", 4711);
+        ZkServer zkServer = TestUtil.startZkServer("BaseZkClientTest-testPeek", 4711);
         ZkClient client = new ZkClient("localhost:4711", 5000);
         client.createPersistent("/queue");
 
@@ -53,15 +51,13 @@ public class DistributedQueueTest {
         assertEquals(Long.valueOf(18L), distributedQueue.poll());
         assertNull(distributedQueue.peek());
 
-        client.close();
         zkServer.shutdown();
-        zkServer.join();
     }
 
     @Test(timeout = 30000)
     public void testMultipleReadingThreads() throws InterruptedException, IOException, KeeperException {
-        ZkServer zkServer = ZkTestUtil.startZkServer("BaseZkClientTest-testDistributedQueue", 4711);
-        ZkClient client = new ZkClient("localhost:4711", 5000);
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
+        ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");
 
         final DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(client, "/queue");
@@ -71,12 +67,12 @@ public class DistributedQueueTest {
             distributedQueue.offer(new Long(i));
         }
 
-        // 5 reading threads
+        // 3 reading threads
         final Set<Long> readElements = Collections.synchronizedSet(new HashSet<Long>());
         List<Thread> threads = new ArrayList<Thread>();
         final List<Exception> exceptions = new Vector<Exception>();
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             Thread thread = new Thread() {
                 @Override
                 public void run() {
@@ -101,12 +97,10 @@ public class DistributedQueueTest {
         for (Thread thread : threads) {
             thread.join();
         }
-        
+
         assertEquals(0, exceptions.size());
         assertEquals(100, readElements.size());
 
-        client.close();
         zkServer.shutdown();
-        zkServer.join();
     }
 }
