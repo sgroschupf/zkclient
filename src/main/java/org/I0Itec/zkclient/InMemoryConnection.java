@@ -1,6 +1,7 @@
 package org.I0Itec.zkclient;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +47,7 @@ public class InMemoryConnection implements IZkConnection {
                 // stop event thread
             }
         }
-        
+
         public void send(WatchedEvent event) {
             _blockingQueue.add(event);
         }
@@ -88,7 +89,7 @@ public class InMemoryConnection implements IZkConnection {
             if (exists(path, false)) {
                 throw new KeeperException.NodeExistsException();
             }
-            
+
             _data.put(path, data);
             checkWatch(_nodeWatches, path, EventType.NodeCreated);
             return path;
@@ -104,7 +105,7 @@ public class InMemoryConnection implements IZkConnection {
             if (!exists(path, false)) {
                 throw new KeeperException.NoNodeException();
             }
-            
+
             _data.remove(path);
             checkWatch(_nodeWatches, path, EventType.NodeDeleted);
         } finally {
@@ -131,12 +132,30 @@ public class InMemoryConnection implements IZkConnection {
 
     @Override
     public List<String> getChildren(String path, boolean watch) throws KeeperException, InterruptedException {
-        if (watch) {
-            throw new UnsupportedOperationException();
+        if (!exists(path, false)) {
+            throw new KeeperException.NoNodeException();
         }
-        throw new UnsupportedOperationException();
-    }
+        if (exists(path, false) && watch) {
+            installWatch(_nodeWatches, path);
+        }
 
+        ArrayList<String> children = new ArrayList<String>();
+        String[] directoryStack = path.split("/");
+        Set<String> keySet = _data.keySet();
+
+        for (String string : keySet) {
+            if (string.startsWith(path)) {
+                String[] stack = string.split("/");
+                // is one folder level below the one we loockig for and starts
+                // with path...
+                if (stack.length == directoryStack.length + 1) {
+                    children.add(string);
+                }
+            }
+
+        }
+        return children;
+    }
 
     @Override
     public States getZookeeperState() {

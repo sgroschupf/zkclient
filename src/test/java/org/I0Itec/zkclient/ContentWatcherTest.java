@@ -87,6 +87,7 @@ public class ContentWatcherTest {
         ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
         assertEquals(null, watcher.getContent());
+        watcher.stop();
     }
 
     @Test(timeout = 15000)
