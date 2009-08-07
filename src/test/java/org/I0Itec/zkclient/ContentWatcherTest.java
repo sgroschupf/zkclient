@@ -95,10 +95,17 @@ public class ContentWatcherTest {
         final Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
         final ZkClient zkClient = new ZkClient("localhost:4712", 5000);
+<<<<<<< HEAD:src/test/java/org/I0Itec/zkclient/ContentWatcherTest.java
 
         // disconnect
         gateway.stop();
 
+=======
+
+        // disconnect
+        gateway.stop();
+
+>>>>>>> c6c0fd4fdd26843421590cce5dc4185dc6bbce3c:src/test/java/org/I0Itec/zkclient/ContentWatcherTest.java
         // reconnect after 250ms and create file with content
         new Thread() {
             @Override

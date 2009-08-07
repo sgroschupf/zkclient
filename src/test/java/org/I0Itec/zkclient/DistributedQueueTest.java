@@ -17,7 +17,10 @@ public class DistributedQueueTest {
 
     @Test(timeout = 15000)
     public void testDistributedQueue() throws InterruptedException, IOException, KeeperException {
+<<<<<<< HEAD:src/test/java/org/I0Itec/zkclient/DistributedQueueTest.java
 
+=======
+>>>>>>> c6c0fd4fdd26843421590cce5dc4185dc6bbce3c:src/test/java/org/I0Itec/zkclient/DistributedQueueTest.java
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");
@@ -37,7 +40,10 @@ public class DistributedQueueTest {
 
     @Test(timeout = 15000)
     public void testPeek() throws InterruptedException, IOException, KeeperException {
+<<<<<<< HEAD:src/test/java/org/I0Itec/zkclient/DistributedQueueTest.java
 
+=======
+>>>>>>> c6c0fd4fdd26843421590cce5dc4185dc6bbce3c:src/test/java/org/I0Itec/zkclient/DistributedQueueTest.java
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testPeek", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");
