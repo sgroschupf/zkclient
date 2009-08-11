@@ -476,7 +476,7 @@ public class ZkClientTest {
 
             @Override
             public Boolean call() throws Exception {
-                return count.get() > 0;
+                return count.get() > 0 && children.get() == null;
             }
         }, TimeUnit.SECONDS, 5);
         assertTrue(eventReceived);
