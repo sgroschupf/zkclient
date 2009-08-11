@@ -61,7 +61,7 @@ class ZkEventThread extends Thread {
 
     public void send(ZkEvent event) {
         if (!isInterrupted()) {
-            LOG.info("New event: " + event);
+            LOG.debug("New event: " + event);
             _events.add(event);
         }
     }
