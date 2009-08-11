@@ -97,7 +97,7 @@ public class DistributedQueueTest {
         for (Thread thread : threads) {
             thread.join();
         }
-        
+
         assertEquals(0, exceptions.size());
         assertEquals(100, readElements.size());
 

@@ -95,6 +95,7 @@ public class ContentWatcherTest {
         ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
         assertEquals(null, watcher.getContent());
+        watcher.stop();
     }
 
     @Test(timeout = 20000)
@@ -103,6 +104,9 @@ public class ContentWatcherTest {
         final Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
         final ZkClient zkClient = new ZkClient("localhost:4712", 5000);
+
+        // disconnect
+        gateway.stop();
 
         // disconnect
         gateway.stop();
