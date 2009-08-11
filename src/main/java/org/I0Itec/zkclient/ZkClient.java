@@ -194,8 +194,8 @@ public class ZkClient implements Watcher {
 
         boolean stateChanged = event.getPath() == null;
         boolean znodeChanged = event.getPath() != null;
-        boolean dataChanged = event.getType() == EventType.NodeDataChanged || event.getType() == EventType.NodeDeleted
-                || event.getType() == EventType.NodeCreated || event.getType() == EventType.NodeChildrenChanged;
+        boolean dataChanged = event.getType() == EventType.NodeDataChanged || event.getType() == EventType.NodeDeleted || event.getType() == EventType.NodeCreated
+                || event.getType() == EventType.NodeChildrenChanged;
 
         getEventLock().lock();
         try {
@@ -291,34 +291,22 @@ public class ZkClient implements Watcher {
 
             if (event.getState() == KeeperState.Expired) {
                 reconnect();
-                for (IZkStateListener stateListener : _stateListener) {
-                    try {
-                        stateListener.handleNewSession();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw e;
-                    } catch (Throwable t) {
-                        LOG.warn("Handler run into an error.", t);
-                    }
-                }
-
-                if (event.getState() == KeeperState.SyncConnected) {
-                    // TODO PVo we should do this in the event thread
-                    // re-register all subscriptions
-                    synchronized (_childListener) {
-                        for (Entry<String, Set<IZkChildListener>> entry : _childListener.entrySet()) {
-                            watchForChilds(entry.getKey());
-                        }
-                    }
-                    synchronized (_dataListener) {
-                        for (Entry<String, Set<IZkDataListener>> entry : _dataListener.entrySet()) {
-                            watchForData(entry.getKey());
-                        }
-                    }
-                }
+                fireNewSessionEvents();
             }
         } catch (final Exception e) {
             throw new RuntimeException("Exception while restarting zk client", e);
+        }
+    }
+
+    private void fireNewSessionEvents() {
+        for (final IZkStateListener stateListener : _stateListener) {
+            _eventThread.send(new ZkEvent("New session event sent to " + stateListener.getClass().getName()) {
+
+                @Override
+                public void run() throws Exception {
+                    stateListener.handleNewSession();
+                }
+            });
         }
     }
 
@@ -373,7 +361,7 @@ public class ZkClient implements Watcher {
                 fireChildChangedEvents(path, childListeners);
             }
         }
-        
+
         if (event.getType() == EventType.NodeDataChanged || event.getType() == EventType.NodeDeleted || event.getType() == EventType.NodeCreated) {
             Set<IZkDataListener> listeners = _dataListener.get(path);
             if (listeners != null && !listeners.isEmpty()) {
