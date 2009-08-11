@@ -75,7 +75,6 @@ public class GatewayThread extends Thread {
                         } finally {
                             runningThreads.remove(this);
                         }
-                        LOG.info("write thread terminated");
                     }
 
                     @Override
@@ -105,7 +104,6 @@ public class GatewayThread extends Thread {
                         } finally {
                             runningThreads.remove(this);
                         }
-                        LOG.info("read thread terminated");
                     }
                 };
 
