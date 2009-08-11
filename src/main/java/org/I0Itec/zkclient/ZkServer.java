@@ -114,7 +114,7 @@ public class ZkServer {
 
     @PreDestroy
     public void shutdown() throws InterruptedException {
-        LOG.info("Shutting down server...");
+        LOG.info("Shutting down ZkServer...");
         try {
             _zkClient.close();
         } catch (InterruptedException e) {
@@ -131,6 +131,7 @@ public class ZkServer {
         if (_nioFactory != null) {
             _nioFactory.join();
         }
+        LOG.info("Shutting down ZkServer...done");
     }
 
     public ZkClient getZkClient() {

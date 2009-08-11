@@ -1,5 +1,8 @@
 package org.I0Itec.zkclient;
 
+import java.io.Serializable;
+
+
 /**
  * An {@link IZkDataListener} can be registered at a {@link ZkClient} for
  * listening on zk data changes for a given path.
@@ -9,13 +12,9 @@ package org.I0Itec.zkclient;
  * missing (see http://zookeeper.wiki.sourceforge.net/ZooKeeperWatches). An
  * implementation of this class should take that into account.
  */
-import java.io.Serializable;
+public interface IZkDataListener {
 
-public interface IZkDataListener<T extends Serializable> {
+    public void handleDataChange(String dataPath, Serializable data) throws Exception;
 
-    void handleDataChange(String dataPath, T data);
-
-    void handleDataAdded(String dataPath, T data);
-
-    void handleDataDeleted(String dataPath);
+    public void handleDataDeleted(String dataPath) throws Exception;
 }

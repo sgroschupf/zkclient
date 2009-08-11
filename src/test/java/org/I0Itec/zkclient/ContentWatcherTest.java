@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
@@ -13,12 +14,15 @@ import org.junit.Test;
 
 public class ContentWatcherTest {
 
+    private static final Logger LOG = Logger.getLogger(ContentWatcherTest.class);
+
     private static final String FILE_NAME = "/ContentWatcherTest";
     private ZkServer _zkServer;
     private ZkClient _zkClient;
 
     @Before
     public void setUp() throws Exception {
+        LOG.info("------------ BEFORE -------------");
         _zkServer = TestUtil.startZkServer("ContentWatcherTest", 4711);
         _zkClient = _zkServer.getZkClient();
     }
@@ -28,10 +32,12 @@ public class ContentWatcherTest {
         if (_zkServer != null) {
             _zkServer.shutdown();
         }
+        LOG.info("------------ AFTER -------------");
     }
 
     @Test
     public void testGetContent() throws Exception {
+        LOG.info("--- testGetContent");
         _zkClient.createPersistent(FILE_NAME, "a");
         final ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
@@ -54,6 +60,7 @@ public class ContentWatcherTest {
 
     @Test
     public void testGetContentWaitTillCreated() throws InterruptedException, KeeperException, IOException {
+        LOG.info("--- testGetContentWaitTillCreated");
         final Holder<String> contentHolder = new Holder<String>();
 
         Thread thread = new Thread() {
@@ -83,14 +90,16 @@ public class ContentWatcherTest {
 
     @Test
     public void testHandlingNullContent() throws InterruptedException, KeeperException, IOException {
+        LOG.info("--- testHandlingNullContent");
         _zkClient.createPersistent(FILE_NAME, null);
         ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
         watcher.start();
         assertEquals(null, watcher.getContent());
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 20000)
     public void testHandlingOfConnectionLoss() throws Exception {
+        LOG.info("--- testHandlingOfConnectionLoss");
         final Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
         final ZkClient zkClient = new ZkClient("localhost:4712", 5000);
@@ -106,17 +115,26 @@ public class ContentWatcherTest {
                     Thread.sleep(250);
                     gateway.start();
                     zkClient.createPersistent(FILE_NAME, "aaa");
+                    zkClient.writeData(FILE_NAME, "b");
                 } catch (Exception e) {
                     // ignore
                 }
             }
         }.start();
 
-        ContentWatcher<String> watcher = new ContentWatcher<String>(zkClient, FILE_NAME);
+        final ContentWatcher<String> watcher = new ContentWatcher<String>(zkClient, FILE_NAME);
         watcher.start();
-        assertEquals("aaa", watcher.getContent());
-        watcher.stop();
 
+        TestUtil.waitUntil("b", new Callable<String>() {
+
+            @Override
+            public String call() throws Exception {
+                return watcher.getContent();
+            }
+        }, TimeUnit.SECONDS, 5);
+        assertEquals("b", watcher.getContent());
+
+        watcher.stop();
         zkClient.close();
         gateway.stop();
     }

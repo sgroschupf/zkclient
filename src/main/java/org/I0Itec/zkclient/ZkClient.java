@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
+import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -25,6 +26,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
+import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 
@@ -38,11 +40,14 @@ public class ZkClient implements Watcher {
 
     private final IZkConnection _connection;
     private final Map<String, Set<IZkChildListener>> _childListener = new ConcurrentHashMap<String, Set<IZkChildListener>>();
-    private final ConcurrentHashMap<String, Set<IZkDataListener<? extends Serializable>>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener<? extends Serializable>>>();
+    private final ConcurrentHashMap<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
     private final Set<IZkStateListener> _stateListener = new CopyOnWriteArraySet<IZkStateListener>();
     private KeeperState _currentState;
     private final ZkLock _zkEventLock = new ZkLock();
     private boolean _shutdownTriggered;
+    private ZkEventThread _eventThread;
+    // TODO PVo remove this later
+    private Thread _zookeeperEventThread;
 
     public ZkClient(IZkConnection connection) throws IOException {
         this(connection, Integer.MAX_VALUE);
@@ -89,22 +94,23 @@ public class ZkClient implements Watcher {
         }
     }
 
-    public void subscribeDataChanges(final String path, final IZkDataListener<? extends Serializable> listener) throws KeeperException, InterruptedException {
-        Set<IZkDataListener<? extends Serializable>> listeners;
+    public void subscribeDataChanges(String path, IZkDataListener listener) throws KeeperException, InterruptedException {
+        Set<IZkDataListener> listeners;
         synchronized (_dataListener) {
             listeners = _dataListener.get(path);
             if (listeners == null) {
-                listeners = new CopyOnWriteArraySet<IZkDataListener<? extends Serializable>>();
+                listeners = new CopyOnWriteArraySet<IZkDataListener>();
                 _dataListener.put(path, listeners);
             }
             listeners.add(listener);
         }
         watchForData(path);
+        LOG.info("Subscribed data changes for " + path);
     }
 
-    public void unsubscribeDataChanges(String path, IZkDataListener<?> dataListener) {
+    public void unsubscribeDataChanges(String path, IZkDataListener dataListener) {
         synchronized (_dataListener) {
-            final Set<IZkDataListener<? extends Serializable>> listeners = _dataListener.get(path);
+            final Set<IZkDataListener> listeners = _dataListener.get(path);
             if (listeners != null) {
                 listeners.remove(dataListener);
             }
@@ -183,13 +189,18 @@ public class ZkClient implements Watcher {
     }
 
     public void process(WatchedEvent event) {
+        LOG.debug("Received event: " + event);
+        _zookeeperEventThread = Thread.currentThread();
+
         boolean stateChanged = event.getPath() == null;
         boolean znodeChanged = event.getPath() != null;
-        boolean dataChanged = event.getType() == Watcher.Event.EventType.NodeDataChanged || event.getType() == Watcher.Event.EventType.NodeChildrenChanged
-                || event.getType() == Watcher.Event.EventType.NodeCreated;
+        boolean dataChanged = event.getType() == EventType.NodeDataChanged || event.getType() == EventType.NodeDeleted
+                || event.getType() == EventType.NodeCreated || event.getType() == EventType.NodeChildrenChanged;
 
         getEventLock().lock();
         try {
+
+            // We might have to install child change event listener if a new node was created
             if (getShutdownTrigger()) {
                 LOG.debug("ignoring event '{" + event.getType() + " | " + event.getPath() + "}' since shutdown triggered");
                 return;
@@ -210,8 +221,9 @@ public class ZkClient implements Watcher {
                 if (event.getState() == KeeperState.Expired) {
                     getEventLock().getZNodeEventCondition().signalAll();
                     getEventLock().getDataChangedCondition().signalAll();
+                    // We also have to notify all listeners that something might have changed
+                    fireAllEvents();
                 }
-                // TODO PVo we also have to notify all listeners that something might have changed
             }
             if (znodeChanged) {
                 getEventLock().getZNodeEventCondition().signalAll();
@@ -220,6 +232,16 @@ public class ZkClient implements Watcher {
                 getEventLock().getDataChangedCondition().signalAll();
             }
             getEventLock().unlock();
+            LOG.debug("Leaving process event");
+        }
+    }
+
+    private void fireAllEvents() {
+        for (Entry<String, Set<IZkChildListener>> entry : _childListener.entrySet()) {
+            fireChildChangedEvents(entry.getKey(), entry.getValue());
+        }
+        for (Entry<String, Set<IZkDataListener>> entry : _dataListener.entrySet()) {
+            fireDataChangedEvents(entry.getKey(), entry.getValue());
         }
     }
 
@@ -265,13 +287,10 @@ public class ZkClient implements Watcher {
             return;
         }
         try {
-            for (IZkStateListener stateListener : _stateListener) {
-                stateListener.handleStateChanged(event.getState());
-            }
+            fireStateChangedEvent(event.getState());
 
             if (event.getState() == KeeperState.Expired) {
-                close();
-                connect(Integer.MAX_VALUE, this);
+                reconnect();
                 for (IZkStateListener stateListener : _stateListener) {
                     try {
                         stateListener.handleNewSession();
@@ -284,6 +303,7 @@ public class ZkClient implements Watcher {
                 }
 
                 if (event.getState() == KeeperState.SyncConnected) {
+                    // TODO PVo we should do this in the event thread
                     // re-register all subscriptions
                     synchronized (_childListener) {
                         for (Entry<String, Set<IZkChildListener>> entry : _childListener.entrySet()) {
@@ -291,7 +311,7 @@ public class ZkClient implements Watcher {
                         }
                     }
                     synchronized (_dataListener) {
-                        for (Entry<String, Set<IZkDataListener<? extends Serializable>>> entry : _dataListener.entrySet()) {
+                        for (Entry<String, Set<IZkDataListener>> entry : _dataListener.entrySet()) {
                             watchForData(entry.getKey());
                         }
                     }
@@ -302,8 +322,20 @@ public class ZkClient implements Watcher {
         }
     }
 
+    private void fireStateChangedEvent(final KeeperState state) throws Exception {
+        for (final IZkStateListener stateListener : _stateListener) {
+            _eventThread.send(new ZkEvent("State changed to " + state + " sent to " + stateListener.getClass().getName()) {
+
+                @Override
+                public void run() throws Exception {
+                    stateListener.handleStateChanged(state);
+                }
+            });
+        }
+    }
+
     private boolean hasListeners(String path) {
-        Set<IZkDataListener<? extends Serializable>> dataListeners = _dataListener.get(path);
+        Set<IZkDataListener> dataListeners = _dataListener.get(path);
         if (dataListeners != null && dataListeners.size() > 0) {
             return true;
         }
@@ -331,55 +363,65 @@ public class ZkClient implements Watcher {
         return delete(path);
     }
 
-    @SuppressWarnings("unchecked")
     private void processDataOrChildChange(WatchedEvent event) {
         // ZkEventType eventType = ZkEventType.getMappedType(event.getType());
         final String path = event.getPath();
 
-        if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+        if (event.getType() == EventType.NodeChildrenChanged || event.getType() == EventType.NodeCreated || event.getType() == EventType.NodeDeleted) {
             Set<IZkChildListener> childListeners = _childListener.get(path);
             if (childListeners != null && !childListeners.isEmpty()) {
-
-                List<String> children;
-                try {
-                    children = getChildren(path);
-                    for (final IZkChildListener listener : childListeners) {
-                        try {
-                            listener.handleChildChange(event.getPath(), children);
-                        } catch (final Throwable e) {
-                            LOG.error("Faild to process event with listener: " + listener, e);
-                        }
-                    }
-                } catch (Exception e) {
-                    LOG.error("Faild to process event " + event.getType() + ". Unable to getChildren.  ", e);
-                }
+                fireChildChangedEvents(path, childListeners);
             }
-        } else {
-            Set<IZkDataListener<? extends Serializable>> listeners = _dataListener.get(path);
+        }
+        
+        if (event.getType() == EventType.NodeDataChanged || event.getType() == EventType.NodeDeleted || event.getType() == EventType.NodeCreated) {
+            Set<IZkDataListener> listeners = _dataListener.get(path);
             if (listeners != null && !listeners.isEmpty()) {
-                try {
-                    Serializable serializable = readData(path, true);
+                fireDataChangedEvents(event.getPath(), listeners);
+            }
+        }
+    }
 
-                    for (final IZkDataListener listener : listeners) {
+    private void fireDataChangedEvents(final String path, Set<IZkDataListener> listeners) {
+        for (final IZkDataListener listener : listeners) {
+            _eventThread.send(new ZkEvent("Data of " + path + " changed sent to " + listener.getClass().getName()) {
+
+                @Override
+                public void run() throws Exception {
+                    // reinstall watch
+                    exists(path, true);
+                    try {
+                        Serializable data = readData(path, true);
+                        listener.handleDataChange(path, data);
+                    } catch (NoNodeException e) {
+                        listener.handleDataDeleted(path);
+                    }
+                }
+            });
+        }
+    }
+
+    private void fireChildChangedEvents(final String path, Set<IZkChildListener> childListeners) {
+        try {
+            // reinstall the watch
+            for (final IZkChildListener listener : childListeners) {
+                _eventThread.send(new ZkEvent("Children of " + path + " changed sent to " + listener.getClass().getName()) {
+
+                    @Override
+                    public void run() throws Exception {
                         try {
-                            if (event.getType() == Watcher.Event.EventType.NodeCreated) {
-                                listener.handleDataAdded(event.getPath(), serializable);
-                            } else if (event.getType() == Watcher.Event.EventType.NodeDataChanged) {
-                                listener.handleDataChange(event.getPath(), serializable);
-                            } else if (event.getType() == Watcher.Event.EventType.NodeDeleted) {
-                                listener.handleDataDeleted(event.getPath());
-                            } else {
-                                LOG.error("Received a unknown event, ignoring: " + event.getType());
-                            }
-                        } catch (final Throwable e) {
-                            LOG.error("Faild to process event " + event.getType() + " with listener: " + listener, e);
+                            // if the node doesn't exist we should listen for the root node to reappear
+                            exists(path);
+                            List<String> children = getChildren(path);
+                            listener.handleChildChange(path, children);
+                        } catch (NoNodeException e) {
+                            listener.handleChildChange(path, null);
                         }
                     }
-                } catch (Exception e) {
-                    // catch for readData
-                    LOG.error("Faild to process event " + event.getType() + ". Unable to read Data.", e);
-                }
+                });
             }
+        } catch (Exception e) {
+            LOG.error("Failed to fire child changed event. Unable to getChildren.  ", e);
         }
     }
 
@@ -403,7 +445,7 @@ public class ZkClient implements Watcher {
         }
     }
 
-    protected Set<IZkDataListener<? extends Serializable>> getDataListener(String path) {
+    protected Set<IZkDataListener> getDataListener(String path) {
         return _dataListener.get(path);
     }
 
@@ -452,6 +494,9 @@ public class ZkClient implements Watcher {
     }
 
     public boolean waitForKeeperState(KeeperState keeperState, long time, TimeUnit timeUnit) throws InterruptedException {
+        if (_zookeeperEventThread != null && Thread.currentThread() == _zookeeperEventThread) {
+            throw new IllegalArgumentException("Must not be done in the zookeeper event thread.");
+        }
         Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
 
         LOG.info("Waiting for keeper state " + keeperState);
@@ -472,6 +517,9 @@ public class ZkClient implements Watcher {
     }
 
     public <T> T retryUntilConnected(Callable<T> callable) throws KeeperException, InterruptedException {
+        if (_zookeeperEventThread != null && Thread.currentThread() == _zookeeperEventThread) {
+            throw new IllegalArgumentException("Must not be done in the zookeeper event thread.");
+        }
         while (true) {
             try {
                 return callable.call();
@@ -484,6 +532,8 @@ public class ZkClient implements Watcher {
                 Thread.yield();
                 waitUntilConnected();
             } catch (KeeperException e) {
+                throw e;
+            } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
                 throw ExceptionUtil.convertToRuntimeException(e);
@@ -581,10 +631,18 @@ public class ZkClient implements Watcher {
     }
 
     public void watchForChilds(final String path) throws KeeperException, InterruptedException {
+        if (_zookeeperEventThread != null && Thread.currentThread() == _zookeeperEventThread) {
+            throw new IllegalArgumentException("Must not be done in the zookeeper event thread.");
+        }
         retryUntilConnected(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                _connection.getChildren(path, true);
+                exists(path, true);
+                try {
+                    getChildren(path, true);
+                } catch (NoNodeException e) {
+                    // ignore, the other watch will listen for the root node to appear
+                }
                 return null;
             }
         });
@@ -595,6 +653,8 @@ public class ZkClient implements Watcher {
         try {
             getEventLock().lockInterruptibly();
             setShutdownTrigger(false);
+            _eventThread = new ZkEventThread();
+            _eventThread.start();
             _connection.connect(watcher);
 
             LOG.debug("Awaiting connection to Zookeeper server");
@@ -621,10 +681,24 @@ public class ZkClient implements Watcher {
     }
 
     public void close() throws InterruptedException {
+        LOG.info("Closing ZkClient...");
         getEventLock().lock();
         try {
             setShutdownTrigger(true);
             _connection.close();
+            _eventThread.interrupt();
+            _eventThread.join();
+        } finally {
+            getEventLock().unlock();
+        }
+        LOG.info("Closing ZkClient...done");
+    }
+
+    private void reconnect() throws IOException, InterruptedException {
+        getEventLock().lock();
+        try {
+            _connection.close();
+            _connection.connect(this);
         } finally {
             getEventLock().unlock();
         }
