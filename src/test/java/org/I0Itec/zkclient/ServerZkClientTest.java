@@ -1,31 +1,30 @@
 package org.I0Itec.zkclient;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ServerZkClientTest extends BaseZkClientTest {
+public class ServerZkClientTest extends AbstractBaseZkClientTest {
     private AtomicInteger _counter = new AtomicInteger();
 
+    @Override
     @Before
-    public void setUp() throws InterruptedException, IOException, KeeperException {
+    public void setUp() throws Exception {
         super.setUp();
         _zkServer = TestUtil.startZkServer("ZkClientTest_" + _counter.addAndGet(1), 4711);
         _client = new ZkClient("localhost:4711", 5000);
     }
 
+    @Override
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws Exception {
         super.tearDown();
         _client.close();
         _zkServer.shutdown();
