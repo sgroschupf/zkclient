@@ -122,14 +122,12 @@ public class ZkServer {
         }
         if (_nioFactory != null) {
             _nioFactory.shutdown();
+            _nioFactory.join();
             _nioFactory = null;
         }
         if (_zk != null) {
             _zk.shutdown();
             _zk = null;
-        }
-        if (_nioFactory != null) {
-            _nioFactory.join();
         }
         LOG.info("Shutting down ZkServer...done");
     }
