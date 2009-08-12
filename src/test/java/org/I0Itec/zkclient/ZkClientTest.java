@@ -234,16 +234,15 @@ public class ZkClientTest {
     public void testChildListenerAfterSessionExpiredException() throws Exception {
         LOG.info("--- testChildListenerAfterSessionExpiredException");
 
-        // Use a tick time of 100ms, because the minimum session timeout is 2 x tick-time.
-        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testChildListenerAfterSessionExpiredException", 4711, 100);
+        int sessionTimeout = 100;
+        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testChildListenerAfterSessionExpiredException", 4711, sessionTimeout / 2);
         ZkClient connectedClient = zkServer.getZkClient();
         connectedClient.createPersistent("/root");
 
         Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
 
-        // Use a session timeout of 200ms
-        final ZkClient disconnectedZkClient = new ZkClient("localhost:4712", 200, 5000);
+        final ZkClient disconnectedZkClient = new ZkClient("localhost:4712", sessionTimeout, 5000);
         final Holder<List<String>> children = new Holder<List<String>>();
         disconnectedZkClient.subscribeChildChanges("/root", new IZkChildListener() {
 
@@ -258,19 +257,19 @@ public class ZkClientTest {
         // The connected client now created a new child node
         connectedClient.createPersistent("/root/node");
 
-        // Wait for 600ms, the session should have expired by then and start the gateway again
-        Thread.sleep(600);
+        // Wait for 3 x sessionTimeout, the session should have expired by then and start the gateway again
+        Thread.sleep(sessionTimeout * 3);
         gateway.start();
 
-        TestUtil.waitUntil(true, new Callable<Boolean>() {
+        Boolean hasOneChild = TestUtil.waitUntil(true, new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
-                return children.get() != null;
+                return children.get() != null && children.get().size() == 1;
             }
         }, TimeUnit.SECONDS, 5);
 
-        assertEquals("" + children, 1, children.get().size());
+        assertTrue(hasOneChild);
 
         disconnectedZkClient.close();
         zkServer.shutdown();

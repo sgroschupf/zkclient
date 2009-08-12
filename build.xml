@@ -121,6 +121,7 @@
         <!-- Set deploy.mode if it hasn't been ... earlier definition overrides. -->
         <property name="forkmode" value="once" />
         <echo>forkmode=${forkmode}</echo>
+        <echo>log4j.properties=file:${unit.test.conf}/log4j.properties</echo>
 
         <delete dir="${build.dir.test-reports}" />
         <mkdir dir="${build.dir.test-reports}" />
@@ -128,8 +129,8 @@
         <mkdir dir="${build.dir.test-data}" />
 
         <ivy:cachepath pathid="test.path.id" conf="test" />
-        <junit showoutput="false" printsummary="yes" haltonfailure="no" forkmode="${forkmode}" fork="yes" maxmemory="256m" dir="${basedir}" errorProperty="tests.failed" failureProperty="tests.failed">
-            <sysproperty key="deploy.mode" value="${deploy.mode}" />
+        <junit printsummary="yes" haltonfailure="no" forkmode="${forkmode}" fork="yes" maxmemory="256m" dir="${basedir}" errorProperty="tests.failed" failureProperty="tests.failed">
+            <sysproperty key="log4j.configuration" value="file:${unit.test.conf}/log4j.properties"/>
             <classpath>
                 <pathelement location="${build.dir.main-classes}" />
                 <pathelement location="${build.dir.test-classes}" />
