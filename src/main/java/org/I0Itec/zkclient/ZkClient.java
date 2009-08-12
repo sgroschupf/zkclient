@@ -59,13 +59,11 @@ public class ZkClient implements Watcher {
     }
 
     public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) throws IOException {
-        _connection = new ZkConnection(zkServers, sessionTimeout);
-        connect(connectionTimeout, this);
+        this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout);
     }
 
     public ZkClient(String zkServers, int connectionTimeout) throws IOException {
-        _connection = new ZkConnection(zkServers);
-        connect(connectionTimeout, this);
+        this(new ZkConnection(zkServers), connectionTimeout);
     }
 
     public ZkClient(String serverstring) throws IOException {
