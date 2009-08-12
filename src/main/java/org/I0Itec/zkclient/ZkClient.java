@@ -73,9 +73,8 @@ public class ZkClient implements Watcher {
     }
 
     public void subscribeChildChanges(final String path, final IZkChildListener listener) throws KeeperException, InterruptedException {
-        Set<IZkChildListener> listeners;
         synchronized (_childListener) {
-            listeners = _childListener.get(path);
+            Set<IZkChildListener> listeners = _childListener.get(path);
             if (listeners == null) {
                 listeners = new CopyOnWriteArraySet<IZkChildListener>();
                 _childListener.put(path, listeners);
@@ -629,7 +628,7 @@ public class ZkClient implements Watcher {
                 try {
                     getChildren(path, true);
                 } catch (NoNodeException e) {
-                    // ignore, the other watch will listen for the root node to appear
+                    // ignore, the "exists" watch will listen for the parent node to appear
                 }
                 return null;
             }

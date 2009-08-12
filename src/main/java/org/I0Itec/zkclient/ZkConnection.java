@@ -50,7 +50,7 @@ public class ZkConnection implements IZkConnection {
         _zk.delete(path, -1);
     }
 
-    public boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException {
+    public boolean exists(String path, boolean watch) throws KeeperException, InterruptedException {
         return _zk.exists(path, watch) != null;
     }
 
