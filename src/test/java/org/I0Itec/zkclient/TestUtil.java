@@ -81,11 +81,11 @@ public class TestUtil {
         } while (true);
     }
 
-    public static ZkServer startZkServer(String testName, int port) throws InterruptedException, IOException {
+    public static ZkServer startZkServer(String testName, int port) throws IOException {
         return startZkServer(testName, port, ZkServer.DEFAULT_TICK_TIME);
     }
     
-    public static ZkServer startZkServer(String testName, int port, int tickTime) throws InterruptedException, IOException {
+    public static ZkServer startZkServer(String testName, int port, int tickTime) throws IOException {
         String dataPath = "./build/test/" + testName + "/data";
         String logPath = "./build/test/" + testName + "/log";
         FileUtils.deleteDirectory(new File(dataPath));

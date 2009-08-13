@@ -74,7 +74,7 @@ public class DistributedQueue<T extends Serializable> {
         return smallestElement;
     }
 
-    public boolean isEmpty() throws InterruptedException {
+    public boolean isEmpty() {
         return _zkClient.getChildren(_root).size() == 0;
     }
 

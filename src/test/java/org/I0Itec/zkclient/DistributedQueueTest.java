@@ -15,7 +15,7 @@ import org.junit.Test;
 public class DistributedQueueTest {
 
     @Test(timeout = 15000)
-    public void testDistributedQueue() throws InterruptedException, IOException {
+    public void testDistributedQueue() throws IOException {
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");
@@ -34,7 +34,7 @@ public class DistributedQueueTest {
     }
 
     @Test(timeout = 15000)
-    public void testPeek() throws InterruptedException, IOException {
+    public void testPeek() throws IOException {
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testPeek", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");

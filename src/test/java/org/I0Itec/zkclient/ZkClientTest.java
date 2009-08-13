@@ -133,7 +133,7 @@ public class ZkClientTest {
     }
 
     @Test
-    public void testWaitUntilExists() throws InterruptedException, IOException {
+    public void testWaitUntilExists() throws IOException {
         LOG.info("--- testWaitUntilExists");
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
         final ZkClient zkClient = zkServer.getZkClient();
@@ -199,7 +199,7 @@ public class ZkClientTest {
     }
 
     @Test(timeout = 15000)
-    public void testRetryUntilConnected_SessionExpiredException() throws InterruptedException, IOException {
+    public void testRetryUntilConnected_SessionExpiredException() throws IOException {
         LOG.info("--- testRetryUntilConnected_SessionExpiredException");
 
         // Use a tick time of 100ms, because the minimum session timeout is 2 x tick-time.

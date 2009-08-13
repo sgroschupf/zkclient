@@ -8,8 +8,6 @@ public interface IDefaultNameSpace {
      * 
      * @param zkClient
      *            The zkclient.
-     * 
-     * @throws InterruptedException
      */
-    public void createDefaultNameSpace(ZkClient zkClient) throws InterruptedException;
+    public void createDefaultNameSpace(ZkClient zkClient);
 }

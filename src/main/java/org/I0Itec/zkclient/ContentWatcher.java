@@ -28,14 +28,14 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
         _zkClient = zkClient;
     }
 
-    public void start() throws InterruptedException {
+    public void start() {
         _zkClient.subscribeDataChanges(_fileName, this);
         readData();
         LOG.debug("Started ContentWatcher");
     }
 
     @SuppressWarnings("unchecked")
-    private void readData() throws InterruptedException {
+    private void readData() {
         try {
             setContent((T) _zkClient.readData(_fileName));
         } catch (ZkNoNodeException e) {
