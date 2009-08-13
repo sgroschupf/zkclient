@@ -234,7 +234,7 @@ public class ZkClientTest {
     public void testChildListenerAfterSessionExpiredException() throws Exception {
         LOG.info("--- testChildListenerAfterSessionExpiredException");
 
-        int sessionTimeout = 100;
+        int sessionTimeout = 200;
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testChildListenerAfterSessionExpiredException", 4711, sessionTimeout / 2);
         ZkClient connectedClient = zkServer.getZkClient();
         connectedClient.createPersistent("/root");
