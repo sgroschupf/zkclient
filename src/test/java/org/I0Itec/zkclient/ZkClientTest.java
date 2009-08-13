@@ -87,7 +87,7 @@ public class ZkClientTest {
         Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
         final ZkConnection zkConnection = new ZkConnection("localhost:4712");
-        final ZkClient zkClient = new ZkClient(zkConnection, 1000);
+        final ZkClient zkClient = new ZkClient(zkConnection, 5000);
 
         gateway.stop();
 
