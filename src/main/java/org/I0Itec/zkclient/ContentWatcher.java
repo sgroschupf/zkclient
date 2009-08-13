@@ -6,9 +6,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
 
 /**
  * @param <T>
@@ -30,17 +29,17 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
         _zkClient = zkClient;
     }
 
-    public void start() throws KeeperException, InterruptedException, IOException {
+    public void start() throws InterruptedException, IOException {
         _zkClient.subscribeDataChanges(_fileName, this);
         readData();
         LOG.debug("Started ContentWatcher");
     }
 
     @SuppressWarnings("unchecked")
-    private void readData() throws KeeperException, InterruptedException, IOException {
+    private void readData() throws InterruptedException, IOException {
         try {
             setContent((T) _zkClient.readData(_fileName));
-        } catch (NoNodeException e) {
+        } catch (ZkNoNodeException e) {
             // ignore if the node has not yet been created
         }
     }

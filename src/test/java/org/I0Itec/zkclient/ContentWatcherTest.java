@@ -7,7 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,7 +58,7 @@ public class ContentWatcherTest {
     }
 
     @Test
-    public void testGetContentWaitTillCreated() throws InterruptedException, KeeperException, IOException {
+    public void testGetContentWaitTillCreated() throws InterruptedException, IOException {
         LOG.info("--- testGetContentWaitTillCreated");
         final Holder<String> contentHolder = new Holder<String>();
 
@@ -89,7 +88,7 @@ public class ContentWatcherTest {
     }
 
     @Test
-    public void testHandlingNullContent() throws InterruptedException, KeeperException, IOException {
+    public void testHandlingNullContent() throws InterruptedException, IOException {
         LOG.info("--- testHandlingNullContent");
         _zkClient.createPersistent(FILE_NAME, null);
         ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);
