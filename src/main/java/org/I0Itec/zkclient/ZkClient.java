@@ -19,7 +19,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
 import org.I0Itec.zkclient.exception.ZkException;
+import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -49,24 +51,24 @@ public class ZkClient implements Watcher {
     // TODO PVo remove this later
     private Thread _zookeeperEventThread;
 
-    public ZkClient(IZkConnection connection) throws IOException {
+    public ZkClient(IZkConnection connection) {
         this(connection, Integer.MAX_VALUE);
     }
 
-    public ZkClient(IZkConnection connection, int connectionTimeout) throws IOException {
+    public ZkClient(IZkConnection connection, int connectionTimeout) {
         _connection = connection;
         connect(connectionTimeout, this);
     }
 
-    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) throws IOException {
+    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) {
         this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout);
     }
 
-    public ZkClient(String zkServers, int connectionTimeout) throws IOException {
+    public ZkClient(String zkServers, int connectionTimeout) {
         this(new ZkConnection(zkServers), connectionTimeout);
     }
 
-    public ZkClient(String serverstring) throws IOException {
+    public ZkClient(String serverstring) {
         this(serverstring, Integer.MAX_VALUE);
     }
 
@@ -140,23 +142,23 @@ public class ZkClient implements Watcher {
 
     // </listeners>
 
-    public void createPersistent(String path) throws InterruptedException, IOException {
+    public void createPersistent(String path) throws InterruptedException {
         create(path, null, CreateMode.PERSISTENT);
     }
 
-    public void createPersistent(String path, Serializable serializable) throws InterruptedException, IOException {
+    public void createPersistent(String path, Serializable serializable) throws InterruptedException {
         create(path, serializable, CreateMode.PERSISTENT);
     }
 
-    public void createPersistentSequential(String path, Serializable serializable) throws InterruptedException, IOException {
+    public void createPersistentSequential(String path, Serializable serializable) throws InterruptedException {
         create(path, serializable, CreateMode.PERSISTENT_SEQUENTIAL);
     }
 
-    public void createEphemeral(final String path) throws InterruptedException, IOException {
+    public void createEphemeral(final String path) throws InterruptedException {
         create(path, null, CreateMode.EPHEMERAL);
     }
 
-    public String create(final String path, Serializable serializable, final CreateMode mode) throws InterruptedException, IOException {
+    public String create(final String path, Serializable serializable, final CreateMode mode) throws InterruptedException {
         assert path != null;
         final byte[] data = serializable == null ? null : toByteArray(serializable);
 
@@ -169,19 +171,23 @@ public class ZkClient implements Watcher {
         });
     }
 
-    private byte[] toByteArray(Serializable serializable) throws IOException {
-        ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-        ObjectOutputStream stream = new ObjectOutputStream(byteArrayOS);
-        stream.writeObject(serializable);
-        stream.close();
-        return byteArrayOS.toByteArray();
+    private byte[] toByteArray(Serializable serializable) {
+        try {
+            ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+            ObjectOutputStream stream = new ObjectOutputStream(byteArrayOS);
+            stream.writeObject(serializable);
+            stream.close();
+            return byteArrayOS.toByteArray();
+        } catch (IOException e) {
+            throw new ZkMarshallingError(e);
+        }
     }
 
-    public void createEphemeral(final String path, final Serializable serializable) throws InterruptedException, IOException {
+    public void createEphemeral(final String path, final Serializable serializable) throws InterruptedException {
         create(path, serializable, CreateMode.EPHEMERAL);
     }
 
-    public String createEphemeralSequential(final String path, final Serializable serializable) throws InterruptedException, IOException {
+    public String createEphemeralSequential(final String path, final Serializable serializable) throws InterruptedException {
         return create(path, serializable, CreateMode.EPHEMERAL_SEQUENTIAL);
     }
 
@@ -308,7 +314,7 @@ public class ZkClient implements Watcher {
         }
     }
 
-    private void fireStateChangedEvent(final KeeperState state) throws Exception {
+    private void fireStateChangedEvent(final KeeperState state) {
         for (final IZkStateListener stateListener : _stateListener) {
             _eventThread.send(new ZkEvent("State changed to " + state + " sent to " + stateListener.getClass().getName()) {
 
@@ -564,12 +570,12 @@ public class ZkClient implements Watcher {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Serializable> T readData(final String path) throws InterruptedException, IOException {
+    public <T extends Serializable> T readData(final String path) throws InterruptedException {
         return (T) readData(path, hasListeners(path));
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Serializable> T readData(final String path, final boolean watch) throws InterruptedException, IOException {
+    private <T extends Serializable> T readData(final String path, final boolean watch) throws InterruptedException {
         byte[] data = retryUntilConnected(new Callable<byte[]>() {
 
             @Override
@@ -581,7 +587,7 @@ public class ZkClient implements Watcher {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Serializable> T readSerializable(byte[] data) throws IOException {
+    private <T extends Serializable> T readSerializable(byte[] data) {
         if (data == null) {
             return null;
         }
@@ -590,11 +596,13 @@ public class ZkClient implements Watcher {
             Object object = inputStream.readObject();
             return (T) object;
         } catch (ClassNotFoundException e) {
-            throw new IOException("Unable to find object class", e);
+            throw new ZkMarshallingError("Unable to find object class.", e);
+        } catch (IOException e) {
+            throw new ZkMarshallingError(e);
         }
     }
 
-    public void writeData(final String path, Serializable serializable) throws InterruptedException, IOException {
+    public void writeData(final String path, Serializable serializable) throws InterruptedException {
         final byte[] data = toByteArray(serializable);
         retryUntilConnected(new Callable<Object>() {
 
@@ -634,7 +642,7 @@ public class ZkClient implements Watcher {
         });
     }
 
-    public void connect(final long maxMsToWaitUntilConnected, Watcher watcher) throws IOException {
+    public void connect(final long maxMsToWaitUntilConnected, Watcher watcher) {
         boolean started = false;
         try {
             getEventLock().lockInterruptibly();
@@ -645,7 +653,7 @@ public class ZkClient implements Watcher {
 
             LOG.debug("Awaiting connection to Zookeeper server");
             if (!waitUntilConnected(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS)) {
-                throw new IOException("Unable to connect to zookeeper server within timeout: " + maxMsToWaitUntilConnected);
+                throw new ZkTimeoutException("Unable to connect to zookeeper server within timeout: " + maxMsToWaitUntilConnected);
             }
             started = true;
         } catch (InterruptedException e) {
@@ -680,7 +688,7 @@ public class ZkClient implements Watcher {
         LOG.info("Closing ZkClient...done");
     }
 
-    private void reconnect() throws IOException, InterruptedException {
+    private void reconnect() throws InterruptedException {
         getEventLock().lock();
         try {
             _connection.close();

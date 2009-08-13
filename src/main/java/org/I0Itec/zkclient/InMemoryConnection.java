@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,7 +67,7 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public void connect(Watcher watcher) throws IOException {
+    public void connect(Watcher watcher) {
         _lock.lock();
         try {
             if (_eventThread != null) {

@@ -3,6 +3,7 @@ package org.I0Itec.zkclient;
 import java.io.IOException;
 import java.util.List;
 
+import org.I0Itec.zkclient.exception.ZkException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
@@ -28,11 +29,15 @@ public class ZkConnection implements IZkConnection {
     }
 
     @Override
-    public void connect(Watcher watcher) throws IOException {
+    public void connect(Watcher watcher) {
         if (_zk != null) {
             throw new IllegalStateException("zk client has already been started");
         }
-        _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
+        try {
+            _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
+        } catch (IOException e) {
+            throw new ZkException("Unable to connect to " + _servers, e);
+        }
     }
     
     public void close() throws InterruptedException {

@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -29,14 +28,14 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
         _zkClient = zkClient;
     }
 
-    public void start() throws InterruptedException, IOException {
+    public void start() throws InterruptedException {
         _zkClient.subscribeDataChanges(_fileName, this);
         readData();
         LOG.debug("Started ContentWatcher");
     }
 
     @SuppressWarnings("unchecked")
-    private void readData() throws InterruptedException, IOException {
+    private void readData() throws InterruptedException {
         try {
             setContent((T) _zkClient.readData(_fileName));
         } catch (ZkNoNodeException e) {

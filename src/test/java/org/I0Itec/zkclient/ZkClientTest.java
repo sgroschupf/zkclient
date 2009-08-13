@@ -9,8 +9,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.junit.After;
 import org.junit.Assert;
@@ -31,7 +31,7 @@ public class ZkClientTest {
         LOG.info("------------ AFTER -------------");
     }
 
-    @Test(expected = IOException.class, timeout = 5000)
+    @Test(expected = ZkTimeoutException.class, timeout = 5000)
     public void testUnableToConnect() throws Exception {
         LOG.info("--- testUnableToConnect");
         // we are using port 4711 to avoid conflicts with the zk server that is
@@ -133,7 +133,7 @@ public class ZkClientTest {
     }
 
     @Test
-    public void testWaitUntilExists() throws InterruptedException, IOException, KeeperException {
+    public void testWaitUntilExists() throws InterruptedException, IOException {
         LOG.info("--- testWaitUntilExists");
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testWaitUntilExists", 4711);
         final ZkClient zkClient = zkServer.getZkClient();
@@ -199,7 +199,7 @@ public class ZkClientTest {
     }
 
     @Test(timeout = 15000)
-    public void testRetryUntilConnected_SessionExpiredException() throws InterruptedException, IOException, KeeperException {
+    public void testRetryUntilConnected_SessionExpiredException() throws InterruptedException, IOException {
         LOG.info("--- testRetryUntilConnected_SessionExpiredException");
 
         // Use a tick time of 100ms, because the minimum session timeout is 2 x tick-time.

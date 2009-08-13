@@ -2,7 +2,6 @@ package org.I0Itec.zkclient;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -58,7 +57,7 @@ public class ContentWatcherTest {
     }
 
     @Test
-    public void testGetContentWaitTillCreated() throws InterruptedException, IOException {
+    public void testGetContentWaitTillCreated() throws InterruptedException {
         LOG.info("--- testGetContentWaitTillCreated");
         final Holder<String> contentHolder = new Holder<String>();
 
@@ -88,7 +87,7 @@ public class ContentWatcherTest {
     }
 
     @Test
-    public void testHandlingNullContent() throws InterruptedException, IOException {
+    public void testHandlingNullContent() throws InterruptedException {
         LOG.info("--- testHandlingNullContent");
         _zkClient.createPersistent(FILE_NAME, null);
         ContentWatcher<String> watcher = new ContentWatcher<String>(_zkClient, FILE_NAME);

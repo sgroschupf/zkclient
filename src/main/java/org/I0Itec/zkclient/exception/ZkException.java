@@ -10,7 +10,7 @@ public class ZkException extends RuntimeException {
         super();
     }
 
-    public ZkException(String message, KeeperException cause) {
+    public ZkException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -18,7 +18,7 @@ public class ZkException extends RuntimeException {
         super(message);
     }
 
-    public ZkException(KeeperException cause) {
+    public ZkException(Throwable cause) {
         super(cause);
     }
 
@@ -52,10 +52,5 @@ public class ZkException extends RuntimeException {
         default:
             return new ZkException(e);
         }
-    }
-    
-    @Override
-    public KeeperException getCause() {
-        return (KeeperException) super.getCause();
     }
 }

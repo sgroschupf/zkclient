@@ -8,7 +8,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.zookeeper.KeeperException;
 import org.mockito.exceptions.base.MockitoAssertionError;
 
 public class TestUtil {
@@ -82,11 +81,11 @@ public class TestUtil {
         } while (true);
     }
 
-    public static ZkServer startZkServer(String testName, int port) throws InterruptedException, IOException, KeeperException {
+    public static ZkServer startZkServer(String testName, int port) throws InterruptedException, IOException {
         return startZkServer(testName, port, ZkServer.DEFAULT_TICK_TIME);
     }
     
-    public static ZkServer startZkServer(String testName, int port, int tickTime) throws InterruptedException, IOException, KeeperException {
+    public static ZkServer startZkServer(String testName, int port, int tickTime) throws InterruptedException, IOException {
         String dataPath = "./build/test/" + testName + "/data";
         String logPath = "./build/test/" + testName + "/log";
         FileUtils.deleteDirectory(new File(dataPath));

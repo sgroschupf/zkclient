@@ -8,7 +8,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.NIOServerCnxn.Factory;
@@ -48,7 +47,7 @@ public class ZkServer {
     }
 
     @PostConstruct
-    public void start() throws InterruptedException, IOException, KeeperException {
+    public void start() throws InterruptedException {
         final String[] localHostNames = NetworkUtil.getLocalHostNames();
         String names = "";
         for (int i = 0; i < localHostNames.length; i++) {
