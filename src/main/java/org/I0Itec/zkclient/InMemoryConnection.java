@@ -165,7 +165,7 @@ public class InMemoryConnection implements IZkConnection {
                 // is one folder level below the one we loockig for and starts
                 // with path...
                 if (stack.length == directoryStack.length + 1) {
-                    children.add(string);
+                    children.add(stack[stack.length-1]);
                 }
             }
 
