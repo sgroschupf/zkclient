@@ -3,8 +3,7 @@ package org.I0Itec.zkclient;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.I0Itec.zkclient.exception.ZkNoNodeException;
 
 public class DistributedQueue<T extends Serializable> {
 
@@ -55,7 +54,7 @@ public class DistributedQueue<T extends Serializable> {
             try {
                 _zkClient.delete(element.getName());
                 return element.getData();
-            } catch (NoNodeException e) {
+            } catch (ZkNoNodeException e) {
                 // somebody else picked up the element first, so we have to
                 // retry with the new first element
             } catch (Exception e) {
@@ -75,7 +74,7 @@ public class DistributedQueue<T extends Serializable> {
         return smallestElement;
     }
 
-    public boolean isEmpty() throws KeeperException, InterruptedException {
+    public boolean isEmpty() {
         return _zkClient.getChildren(_root).size() == 0;
     }
 
@@ -91,7 +90,7 @@ public class DistributedQueue<T extends Serializable> {
 
                 try {
                     return new Element<T>(_root + "/" + elementName, (T) _zkClient.readData(_root + "/" + elementName));
-                } catch (NoNodeException e) {
+                } catch (ZkNoNodeException e) {
                     // somebody else picked up the element first, so we have to
                     // retry with the new first element
                 }

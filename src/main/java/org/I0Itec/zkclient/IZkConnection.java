@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.zookeeper.CreateMode;
@@ -10,7 +9,7 @@ import org.apache.zookeeper.ZooKeeper.States;
 
 interface IZkConnection {
 
-    public void connect(Watcher watcher) throws IOException;
+    public void connect(Watcher watcher);
 
     void close() throws InterruptedException;
 

@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import org.apache.zookeeper.KeeperException;
 
 public interface IDefaultNameSpace {
 
@@ -9,9 +8,6 @@ public interface IDefaultNameSpace {
      * 
      * @param zkClient
      *            The zkclient.
-     * 
-     * @throws InterruptedException
-     * @throws KeeperException
      */
-    public void createDefaultNameSpace(ZkClient zkClient) throws KeeperException, InterruptedException;
+    public void createDefaultNameSpace(ZkClient zkClient);
 }

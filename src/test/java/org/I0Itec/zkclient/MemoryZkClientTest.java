@@ -1,22 +1,19 @@
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
-
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class MemoryZkClientTest extends BaseZkClientTest {
+public class MemoryZkClientTest extends AbstractBaseZkClientTest {
 
     @Override
-    public void setUp() throws InterruptedException, IOException, KeeperException {
+    public void setUp() throws Exception {
         super.setUp();
         _client = new ZkClient(new InMemoryConnection());
     }
 
     @Override
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws Exception {
         super.tearDown();
         _client.close();
     }

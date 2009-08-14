@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,6 +11,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -68,7 +68,7 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public void connect(Watcher watcher) throws IOException {
+    public void connect(Watcher watcher) {
         _lock.lock();
         try {
             if (_eventThread != null) {
@@ -92,10 +92,23 @@ public class InMemoryConnection implements IZkConnection {
 
             _data.put(path, data);
             checkWatch(_nodeWatches, path, EventType.NodeCreated);
+            // we also need to send a child change event for the parent
+            String parentPath = getParentPath(path);
+            if (parentPath != null) {
+                checkWatch(_nodeWatches, parentPath, EventType.NodeChildrenChanged);
+            }
             return path;
         } finally {
             _lock.unlock();
         }
+    }
+
+    private String getParentPath(String path) {
+        int lastIndexOf = path.lastIndexOf("/");
+        if (lastIndexOf == -1 || lastIndexOf == 0) {
+            return null;
+        }
+        return path.substring(0, lastIndexOf);
     }
 
     @Override
@@ -105,9 +118,12 @@ public class InMemoryConnection implements IZkConnection {
             if (!exists(path, false)) {
                 throw new KeeperException.NoNodeException();
             }
-
             _data.remove(path);
             checkWatch(_nodeWatches, path, EventType.NodeDeleted);
+            String parentPath = getParentPath(path);
+            if (parentPath != null) {
+                checkWatch(_nodeWatches, parentPath, EventType.NodeChildrenChanged);
+            }
         } finally {
             _lock.unlock();
         }
@@ -177,7 +193,11 @@ public class InMemoryConnection implements IZkConnection {
         }
         _lock.lock();
         try {
-            return _data.get(path);
+            byte[] bs = _data.get(path);
+            if (bs == null) {
+                throw new ZkNoNodeException(new KeeperException.NoNodeException());
+            }
+            return bs;
         } finally {
             _lock.unlock();
         }
@@ -192,6 +212,10 @@ public class InMemoryConnection implements IZkConnection {
                 throw new KeeperException.NoNodeException();
             }
             _data.put(path, data);
+            String parentPath = getParentPath(path);
+            if (parentPath != null) {
+                checkWatch(_nodeWatches, parentPath, EventType.NodeChildrenChanged);
+            }
         } finally {
             _lock.unlock();
         }

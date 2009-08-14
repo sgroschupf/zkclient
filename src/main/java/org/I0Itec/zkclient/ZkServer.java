@@ -7,8 +7,9 @@ import java.util.Arrays;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.I0Itec.zkclient.exception.ZkException;
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.NIOServerCnxn.Factory;
@@ -48,7 +49,7 @@ public class ZkServer {
     }
 
     @PostConstruct
-    public void start() throws InterruptedException, IOException, KeeperException {
+    public void start() {
         final String[] localHostNames = NetworkUtil.getLocalHostNames();
         String names = "";
         for (int i = 0; i < localHostNames.length; i++) {
@@ -65,7 +66,7 @@ public class ZkServer {
     }
 
  
-    private void startZooKeeperServer() throws InterruptedException {
+    private void startZooKeeperServer() {
         final String[] localhostHostNames = NetworkUtil.getLocalHostNames();
         final String servers = "localhost:" + _port;
         // check if this server needs to start a _client server.
@@ -102,35 +103,40 @@ public class ZkServer {
         }
     }
 
-    private void startSingleZkServer(final int tickTime, final File dataDir, final File dataLogDir, final int port) throws InterruptedException {
+    private void startSingleZkServer(final int tickTime, final File dataDir, final File dataLogDir, final int port) {
         try {
             _zk = new ZooKeeperServer(dataDir, dataLogDir, tickTime);
             _nioFactory = new NIOServerCnxn.Factory(port);
             _nioFactory.startup(_zk);
-        } catch (final IOException e) {
-            throw new RuntimeException("Unable to start single ZooKeeper server.", e);
+        } catch (IOException e) {
+            throw new ZkException("Unable to start single ZooKeeper server.", e);
+        } catch (InterruptedException e) {
+            throw new ZkInterruptedException(e);
         }
     }
 
     @PreDestroy
-    public void shutdown() throws InterruptedException {
-        LOG.info("Shutting down server...");
+    public void shutdown() {
+        LOG.info("Shutting down ZkServer...");
         try {
             _zkClient.close();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (ZkException e) {
+            LOG.warn("Error on closing zkclient: " + e.getClass().getName());
         }
         if (_nioFactory != null) {
             _nioFactory.shutdown();
+            try {
+                _nioFactory.join();
+            } catch (InterruptedException e) {
+                // ignore
+            }
             _nioFactory = null;
         }
         if (_zk != null) {
             _zk.shutdown();
             _zk = null;
         }
-        if (_nioFactory != null) {
-            _nioFactory.join();
-        }
+        LOG.info("Shutting down ZkServer...done");
     }
 
     public ZkClient getZkClient() {

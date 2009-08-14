@@ -1,21 +1,18 @@
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 /**
  * @param <T>
  *            The data type that is being watched.
  */
-public final class ContentWatcher<T extends Serializable> implements IZkDataListener<T>, IZkStateListener {
+public final class ContentWatcher<T extends Serializable> implements IZkDataListener {
 
     private static final Logger LOG = Logger.getLogger(ContentWatcher.class);
 
@@ -31,33 +28,27 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
         _zkClient = zkClient;
     }
 
-    public void start() throws KeeperException, InterruptedException, IOException {
+    public void start() {
         _zkClient.subscribeDataChanges(_fileName, this);
-        _zkClient.subscribeStateChanges(this);
         readData();
+        LOG.debug("Started ContentWatcher");
     }
 
     @SuppressWarnings("unchecked")
-    private void readData() throws KeeperException, InterruptedException, IOException {
+    private void readData() {
         try {
             setContent((T) _zkClient.readData(_fileName));
-        } catch (NoNodeException e) {
+        } catch (ZkNoNodeException e) {
             // ignore if the node has not yet been created
         }
     }
 
     public void stop() {
         _zkClient.unsubscribeDataChanges(_fileName, this);
-        _zkClient.unsubscribeStateChanges(this);
-    }
-
-    @Override
-    public void handleDataAdded(String dataPath, T data) {
-        setContent(data);
     }
 
     public void setContent(T data) {
-        LOG.info("Received new data: " + data);
+        LOG.debug("Received new data: " + data);
         _contentLock.lock();
         try {
             _content = new Holder<T>(data);
@@ -67,9 +58,10 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void handleDataChange(String dataPath, T data) {
-        setContent(data);
+    public void handleDataChange(String dataPath, Serializable serializable) {
+        setContent((T) serializable);
     }
 
     @Override
@@ -86,18 +78,6 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
             return _content.get();
         } finally {
             _contentLock.unlock();
-        }
-    }
-
-    @Override
-    public void handleNewSession() throws Exception {
-        // nothing to do
-    }
-
-    @Override
-    public void handleStateChanged(KeeperState state) throws Exception {
-        if (state == KeeperState.SyncConnected) {
-            readData();
         }
     }
 }

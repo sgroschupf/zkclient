@@ -25,7 +25,7 @@ public class Gateway {
             try {
                 _thread.interruptAndJoin();
             } catch (InterruptedException e) {
-                // ignore
+                Thread.currentThread().interrupt();
             }
             _thread = null;
         }

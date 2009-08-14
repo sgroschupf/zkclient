@@ -10,13 +10,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
 
 public class DistributedQueueTest {
 
     @Test(timeout = 15000)
-    public void testDistributedQueue() throws InterruptedException, IOException, KeeperException {
+    public void testDistributedQueue() throws IOException {
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");
@@ -35,7 +34,7 @@ public class DistributedQueueTest {
     }
 
     @Test(timeout = 15000)
-    public void testPeek() throws InterruptedException, IOException, KeeperException {
+    public void testPeek() throws IOException {
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testPeek", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");
@@ -55,7 +54,7 @@ public class DistributedQueueTest {
     }
 
     @Test(timeout = 30000)
-    public void testMultipleReadingThreads() throws InterruptedException, IOException, KeeperException {
+    public void testMultipleReadingThreads() throws InterruptedException, IOException {
         ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
         ZkClient client = zkServer.getZkClient();
         client.createPersistent("/queue");

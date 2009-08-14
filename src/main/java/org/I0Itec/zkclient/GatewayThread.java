@@ -36,7 +36,7 @@ public class GatewayThread extends Thread {
     public void run() {
         final List<Thread> runningThreads = new Vector<Thread>();
         try {
-            LOG.info("starting gateway on port " + _port + " pointing to port " + _destinationPort);
+            LOG.info("Starting gateway on port " + _port + " pointing to port " + _destinationPort);
             _serverSocket = new ServerSocket(_port);
             _lock.lock();
             try {
@@ -75,7 +75,6 @@ public class GatewayThread extends Thread {
                         } finally {
                             runningThreads.remove(this);
                         }
-                        LOG.info("write thread terminated");
                     }
 
                     @Override
@@ -105,7 +104,6 @@ public class GatewayThread extends Thread {
                         } finally {
                             runningThreads.remove(this);
                         }
-                        LOG.info("read thread terminated");
                     }
                 };
 
