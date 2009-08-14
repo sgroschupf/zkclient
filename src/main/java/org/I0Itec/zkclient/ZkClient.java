@@ -683,6 +683,19 @@ public class ZkClient implements Watcher {
         }
     }
 
+    public long getCreationTime(String path) {
+        try {
+            getEventLock().lockInterruptibly();
+            return _connection.getCreateTime(path);
+        } catch (KeeperException e) {
+            throw ZkException.create(e);
+        } catch (InterruptedException e) {
+            throw new ZkInterruptedException(e);
+        } finally {
+            getEventLock().unlock();
+        }
+    }
+
     public void close() {
         LOG.info("Closing ZkClient...");
         getEventLock().lock();

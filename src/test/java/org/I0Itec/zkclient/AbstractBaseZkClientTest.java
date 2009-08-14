@@ -329,4 +329,16 @@ public abstract class AbstractBaseZkClientTest {
         assertTrue(eventReceived);
         assertNull(children.get());
     }
+
+    @Test
+    public void testGetCreationTime() throws Exception {
+        long start = System.currentTimeMillis();
+        Thread.sleep(100);
+        String path = "/a";
+        _client.createPersistent(path);
+        Thread.sleep(100);
+        long end = System.currentTimeMillis();
+        long creationTime = _client.getCreationTime(path);
+        assertTrue(start < creationTime && end > creationTime);
+    }
 }

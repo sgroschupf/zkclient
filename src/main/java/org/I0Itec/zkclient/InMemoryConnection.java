@@ -24,6 +24,8 @@ public class InMemoryConnection implements IZkConnection {
 
     private Lock _lock = new ReentrantLock(true);
     private Map<String, byte[]> _data = new HashMap<String, byte[]>();
+    private Map<String, Long> _creationTime = new HashMap<String, Long>();
+
     private Set<String> _dataWatches = new HashSet<String>();
     private Set<String> _nodeWatches = new HashSet<String>();
     private EventThread _eventThread;
@@ -91,6 +93,7 @@ public class InMemoryConnection implements IZkConnection {
             }
 
             _data.put(path, data);
+            _creationTime.put(path, System.currentTimeMillis());
             checkWatch(_nodeWatches, path, EventType.NodeCreated);
             // we also need to send a child change event for the parent
             String parentPath = getParentPath(path);
@@ -119,6 +122,7 @@ public class InMemoryConnection implements IZkConnection {
                 throw new KeeperException.NoNodeException();
             }
             _data.remove(path);
+            _creationTime.remove(path);
             checkWatch(_nodeWatches, path, EventType.NodeDeleted);
             String parentPath = getParentPath(path);
             if (parentPath != null) {
@@ -165,7 +169,7 @@ public class InMemoryConnection implements IZkConnection {
                 // is one folder level below the one we loockig for and starts
                 // with path...
                 if (stack.length == directoryStack.length + 1) {
-                    children.add(stack[stack.length-1]);
+                    children.add(stack[stack.length - 1]);
                 }
             }
 
@@ -226,5 +230,14 @@ public class InMemoryConnection implements IZkConnection {
             watches.remove(path);
             _eventThread.send(new WatchedEvent(eventType, KeeperState.SyncConnected, path));
         }
+    }
+
+    @Override
+    public long getCreateTime(String path) {
+        Long time = _creationTime.get(path);
+        if (time == null) {
+            return -1;
+        }
+        return time;
     }
 }

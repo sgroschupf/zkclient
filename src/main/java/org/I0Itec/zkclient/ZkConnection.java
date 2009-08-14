@@ -10,6 +10,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.Stat;
 
 public class ZkConnection implements IZkConnection {
 
@@ -77,5 +78,15 @@ public class ZkConnection implements IZkConnection {
 
     public ZooKeeper getZookeeper() {
         return _zk;
+    }
+
+    @Override
+    public long getCreateTime(String path) throws KeeperException, InterruptedException {
+        Stat stat = _zk.exists(path, false);
+        if (stat != null) {
+          return stat.getCtime();
+        } else {
+          return -1;
+        }
     }
 }

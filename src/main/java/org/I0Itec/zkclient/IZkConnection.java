@@ -26,4 +26,6 @@ interface IZkConnection {
     public void writeData(String path, byte[] data) throws KeeperException, InterruptedException;
 
     public States getZookeeperState();
+
+    public long getCreateTime(String path) throws KeeperException, InterruptedException;
 }
