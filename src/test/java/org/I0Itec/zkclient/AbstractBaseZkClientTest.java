@@ -1,9 +1,6 @@
 package org.I0Itec.zkclient;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -288,7 +285,7 @@ public abstract class AbstractBaseZkClientTest {
 
             @Override
             public Boolean call() throws Exception {
-                return count.get() > 0;
+                return count.get() > 0 && children.get() != null;
             }
         }, TimeUnit.SECONDS, 5);
         assertTrue(eventReceived);
