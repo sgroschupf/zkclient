@@ -32,6 +32,6 @@
         <!-- Testing -->
         <dependency org="junit" name="junit" rev="4.5" conf="test" />
         <dependency org="commons-io" name="commons-io" rev="1.4" conf="test" />
-        <dependency org="org.mockito" name="mockito-core" rev="1.7" conf="compile" />
+        <dependency org="org.mockito" name="mockito-core" rev="1.7" conf="test" />
     </dependencies>
 </ivy-module>
