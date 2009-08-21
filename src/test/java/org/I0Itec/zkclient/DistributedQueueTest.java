@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +25,7 @@ public class DistributedQueueTest {
         _zkClient = _zkServer.getZkClient();
     }
     
+    @After
     public void tearDown() {
         if (_zkServer != null) {
             _zkServer.shutdown();
