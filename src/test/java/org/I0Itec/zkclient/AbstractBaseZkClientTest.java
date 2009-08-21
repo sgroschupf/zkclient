@@ -2,7 +2,6 @@ package org.I0Itec.zkclient;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -71,7 +70,7 @@ public abstract class AbstractBaseZkClientTest {
     }
 
     @Test
-    public void testWaitUntilExists() throws IOException {
+    public void testWaitUntilExists() {
         LOG.info("--- testWaitUntilExists");
         // create /gaga node asynchronously
         new Thread() {

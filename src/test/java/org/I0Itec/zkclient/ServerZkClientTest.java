@@ -1,9 +1,7 @@
 package org.I0Itec.zkclient;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +74,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
     }
 
     @Test(timeout = 15000)
-    public void testRetryUntilConnected_SessionExpiredException() throws IOException {
+    public void testRetryUntilConnected_SessionExpiredException() {
         LOG.info("--- testRetryUntilConnected_SessionExpiredException");
 
         // Use a tick time of 100ms, because the minimum session timeout is 2 x tick-time.
