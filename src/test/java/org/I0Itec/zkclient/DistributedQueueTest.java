@@ -10,17 +10,31 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import org.junit.Before;
 import org.junit.Test;
 
 public class DistributedQueueTest {
 
-    @Test(timeout = 15000)
-    public void testDistributedQueue() throws IOException {
-        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
-        ZkClient client = zkServer.getZkClient();
-        client.createPersistent("/queue");
+    private ZkServer _zkServer;
+    private ZkClient _zkClient;
 
-        DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(client, "/queue");
+    @Before
+    public void setUp() throws IOException {
+        _zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
+        _zkClient = _zkServer.getZkClient();
+    }
+    
+    public void tearDown() {
+        if (_zkServer != null) {
+            _zkServer.shutdown();
+        }
+    }
+    
+    @Test(timeout = 15000)
+    public void testDistributedQueue() {
+        _zkClient.createPersistent("/queue");
+
+        DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(_zkClient, "/queue");
         distributedQueue.offer(17L);
         distributedQueue.offer(18L);
         distributedQueue.offer(19L);
@@ -29,17 +43,13 @@ public class DistributedQueueTest {
         assertEquals(Long.valueOf(18L), distributedQueue.poll());
         assertEquals(Long.valueOf(19L), distributedQueue.poll());
         assertNull(distributedQueue.poll());
-
-        zkServer.shutdown();
     }
 
     @Test(timeout = 15000)
-    public void testPeek() throws IOException {
-        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testPeek", 4711);
-        ZkClient client = zkServer.getZkClient();
-        client.createPersistent("/queue");
+    public void testPeek() {
+        _zkClient.createPersistent("/queue");
 
-        DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(client, "/queue");
+        DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(_zkClient, "/queue");
         distributedQueue.offer(17L);
         distributedQueue.offer(18L);
 
@@ -49,17 +59,13 @@ public class DistributedQueueTest {
         assertEquals(Long.valueOf(18L), distributedQueue.peek());
         assertEquals(Long.valueOf(18L), distributedQueue.poll());
         assertNull(distributedQueue.peek());
-
-        zkServer.shutdown();
     }
 
     @Test(timeout = 30000)
-    public void testMultipleReadingThreads() throws InterruptedException, IOException {
-        ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
-        ZkClient client = zkServer.getZkClient();
-        client.createPersistent("/queue");
+    public void testMultipleReadingThreads() throws InterruptedException {
+        _zkClient.createPersistent("/queue");
 
-        final DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(client, "/queue");
+        final DistributedQueue<Long> distributedQueue = new DistributedQueue<Long>(_zkClient, "/queue");
 
         // insert 100 elements
         for (int i = 0; i < 100; i++) {
@@ -99,7 +105,5 @@ public class DistributedQueueTest {
 
         assertEquals(0, exceptions.size());
         assertEquals(100, readElements.size());
-
-        zkServer.shutdown();
     }
 }
