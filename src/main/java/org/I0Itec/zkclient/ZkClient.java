@@ -73,7 +73,7 @@ public class ZkClient implements Watcher {
         this(serverstring, Integer.MAX_VALUE);
     }
 
-    public void subscribeChildChanges(final String path, final IZkChildListener listener) {
+    public List<String> subscribeChildChanges(String path, IZkChildListener listener) {
         synchronized (_childListener) {
             Set<IZkChildListener> listeners = _childListener.get(path);
             if (listeners == null) {
@@ -82,7 +82,7 @@ public class ZkClient implements Watcher {
             }
             listeners.add(listener);
         }
-        watchForChilds(path);
+        return watchForChilds(path);
     }
 
     public void unsubscribeChildChanges(String path, IZkChildListener childListener) {
@@ -637,16 +637,22 @@ public class ZkClient implements Watcher {
         });
     }
 
-    public void watchForChilds(final String path) {
+    /**
+     * Installs a child watch for the given path.
+     * 
+     * @param path
+     * @return the current children of the path or null if the zk node with the given path doesn't exist.
+     */
+    public List<String> watchForChilds(final String path) {
         if (_zookeeperEventThread != null && Thread.currentThread() == _zookeeperEventThread) {
             throw new IllegalArgumentException("Must not be done in the zookeeper event thread.");
         }
-        retryUntilConnected(new Callable<Object>() {
+        return retryUntilConnected(new Callable<List<String>>() {
             @Override
-            public Object call() throws Exception {
+            public List<String> call() throws Exception {
                 exists(path, true);
                 try {
-                    getChildren(path, true);
+                    return getChildren(path, true);
                 } catch (ZkNoNodeException e) {
                     // ignore, the "exists" watch will listen for the parent node to appear
                 }
