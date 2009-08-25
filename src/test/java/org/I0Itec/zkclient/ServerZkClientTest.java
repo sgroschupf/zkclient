@@ -83,7 +83,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         gateway.start();
 
         // Use a session timeout of 200ms
-        final ZkClient _client = new ZkClient("localhost:4712", 200, 5000);
+        final ZkClient zkClient = new ZkClient("localhost:4712", 200, 5000);
 
         gateway.stop();
 
@@ -91,16 +91,16 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         new DeferredGatewayStarter(gateway, 600).start();
 
         // This should work as soon as a new session has been created (and the connection is reestablished), if it fails it throws a SessionExpiredException
-        _client.retryUntilConnected(new Callable<Object>() {
+        zkClient.retryUntilConnected(new Callable<Object>() {
 
             @Override
             public Object call() throws Exception {
-                _client.exists("/a");
+                zkClient.exists("/a");
                 return null;
             }
         });
 
-        _client.close();
+        zkClient.close();
         // zkServer.shutdown();
         gateway.stop();
     }

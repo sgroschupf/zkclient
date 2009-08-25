@@ -14,7 +14,8 @@ import org.apache.zookeeper.data.Stat;
 
 public class ZkConnection implements IZkConnection {
 
-    private static final int DEFAULT_SESSION_TIMEOUT = 500;
+    /** It is recommended to use quite large sessions timeouts for Zookeeper. */
+    private static final int DEFAULT_SESSION_TIMEOUT = 30000;
     private ZooKeeper _zk = null;
 
     private final String _servers;
