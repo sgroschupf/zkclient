@@ -1,5 +1,6 @@
 package org.I0Itec.zkclient;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,7 +14,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 public class GatewayThread extends Thread {
@@ -74,7 +74,7 @@ public class GatewayThread extends Thread {
                         } catch (IOException e) {
                             // ignore
                         } finally {
-                            IOUtils.closeQuietly(outgoingOutputStream);
+                            closeQuietly(outgoingOutputStream);
                             runningThreads.remove(this);
                         }
                     }
@@ -104,7 +104,7 @@ public class GatewayThread extends Thread {
                         } catch (IOException e) {
                             // ignore
                         } finally {
-                            IOUtils.closeQuietly(incomingOutputStream);
+                            closeQuietly(incomingOutputStream);
                             runningThreads.remove(this);
                         }
                     }
@@ -129,6 +129,14 @@ public class GatewayThread extends Thread {
             } catch (InterruptedException e) {
                 // ignore
             }
+        }
+    }
+
+    protected void closeQuietly(Closeable closable) {
+        try {
+            closable.close();
+        } catch (IOException e) {
+            // ignore
         }
     }
 
