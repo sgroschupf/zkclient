@@ -106,9 +106,6 @@ public class ContentWatcherTest {
         // disconnect
         gateway.stop();
 
-        // disconnect
-        gateway.stop();
-
         // reconnect after 250ms and create file with content
         new Thread() {
             @Override

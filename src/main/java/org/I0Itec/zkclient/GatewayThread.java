@@ -13,6 +13,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 public class GatewayThread extends Thread {
@@ -71,12 +72,13 @@ public class GatewayThread extends Thread {
                                 outgoingOutputStream.write(read);
                             }
                         } catch (IOException e) {
-                            //
+                            // ignore
                         } finally {
+                            IOUtils.closeQuietly(outgoingOutputStream);
                             runningThreads.remove(this);
                         }
                     }
-
+                    
                     @Override
                     public void interrupt() {
                         try {
@@ -85,7 +87,7 @@ public class GatewayThread extends Thread {
                         } catch (IOException e) {
                             LOG.error("error on stopping closing sockets", e);
                         }
-
+                        
                         super.interrupt();
                     }
                 };
@@ -100,8 +102,9 @@ public class GatewayThread extends Thread {
                                 incomingOutputStream.write(read);
                             }
                         } catch (IOException e) {
-                            //
+                            // ignore
                         } finally {
+                            IOUtils.closeQuietly(incomingOutputStream);
                             runningThreads.remove(this);
                         }
                     }
@@ -118,7 +121,7 @@ public class GatewayThread extends Thread {
         } catch (Exception e) {
             LOG.error("error on gateway execution", e);
         }
-        
+
         for (Thread thread : new ArrayList<Thread>(runningThreads)) {
             thread.interrupt();
             try {

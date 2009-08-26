@@ -148,4 +148,17 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         disconnectedZkClient.close();
         gateway.stop();
     }
+    
+    
+    @Test(timeout = 10000)
+    public void testZkClientConnectedToGatewayClosesQuickly() throws Exception {
+        LOG.info("--- testZkClientConnectedToGatewayClosesQuickly");
+        final Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+
+        ZkClient zkClient = new ZkClient("localhost:4712", 5000);
+        zkClient.close();
+        
+        gateway.stop();
+    }
 }
