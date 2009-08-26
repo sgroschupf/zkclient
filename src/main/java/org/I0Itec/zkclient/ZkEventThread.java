@@ -2,6 +2,7 @@ package org.I0Itec.zkclient;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 
@@ -16,6 +17,8 @@ class ZkEventThread extends Thread {
     private static final Logger LOG = Logger.getLogger(ZkEventThread.class);
 
     private BlockingQueue<ZkEvent> _events = new LinkedBlockingQueue<ZkEvent>();
+
+    private static AtomicInteger _eventId = new AtomicInteger(0);
 
     static abstract class ZkEvent {
 
@@ -35,7 +38,7 @@ class ZkEventThread extends Thread {
 
     ZkEventThread() {
         setDaemon(true);
-        setName("ZkClient-EventThread");
+        setName("ZkClient-EventThread-" + getId());
     }
 
     @Override
@@ -44,7 +47,8 @@ class ZkEventThread extends Thread {
         try {
             while (!isInterrupted()) {
                 ZkEvent zkEvent = _events.take();
-                LOG.debug("Delivering event " + zkEvent);
+                int eventId = _eventId.incrementAndGet();
+                LOG.debug("Delivering event #" + eventId + " " + zkEvent);
                 try {
                     zkEvent.run();
                 } catch (InterruptedException e) {
@@ -52,7 +56,7 @@ class ZkEventThread extends Thread {
                 } catch (Exception e) {
                     LOG.warn("Error handling event " + zkEvent, e);
                 }
-                LOG.debug("Delivering event done");
+                LOG.debug("Delivering event #" + eventId + " done");
             }
         } catch (InterruptedException e) {
             LOG.info("Terminate ZkClient event thread.");
