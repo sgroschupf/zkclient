@@ -262,13 +262,18 @@ public class ZkClient implements Watcher {
         });
     }
 
+    /**
+     * Counts number of children for the given path.
+     * 
+     * @param path
+     * @return number of children or 0 if path does not exist.
+     */
     public int countChildren(String path) {
-        // TODO PVo this is not safe
-        int childCount = 0;
-        if (exists(path)) {
-            childCount = getChildren(path).size();
+        try {
+            return getChildren(path).size();
+        } catch (ZkNoNodeException e) {
+            return 0;
         }
-        return childCount;
     }
 
     private boolean exists(final String path, final boolean watch) {

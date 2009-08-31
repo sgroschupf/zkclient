@@ -148,8 +148,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         disconnectedZkClient.close();
         gateway.stop();
     }
-    
-    
+
     @Test(timeout = 10000)
     public void testZkClientConnectedToGatewayClosesQuickly() throws Exception {
         LOG.info("--- testZkClientConnectedToGatewayClosesQuickly");
@@ -158,7 +157,34 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
 
         ZkClient zkClient = new ZkClient("localhost:4712", 5000);
         zkClient.close();
-        
+
         gateway.stop();
+    }
+
+    @Test
+    public void testCountChildren() throws InterruptedException {
+        assertEquals(0, _client.countChildren("/a"));
+        _client.createPersistent("/a");
+        assertEquals(0, _client.countChildren("/a"));
+        _client.createPersistent("/a/b");
+        assertEquals(1, _client.countChildren("/a"));
+
+        // test concurrent access
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                while (!isInterrupted()) {
+                    _client.createPersistent("/test");
+                    _client.delete("/test");
+                }
+            }
+        };
+
+        thread.start();
+        for (int i = 0; i < 1000; i++) {
+            assertEquals(0, _client.countChildren("/test"));
+        }
+        thread.interrupt();
+        thread.join();
     }
 }
