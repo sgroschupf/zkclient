@@ -36,9 +36,9 @@ class ZkEventThread extends Thread {
         }
     }
 
-    ZkEventThread() {
+    ZkEventThread(String name) {
         setDaemon(true);
-        setName("ZkClient-EventThread-" + getId());
+        setName("ZkClient-EventThread-" + getId() + "-" + name);
     }
 
     @Override

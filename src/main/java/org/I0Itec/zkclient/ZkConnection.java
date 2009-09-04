@@ -86,8 +86,12 @@ public class ZkConnection implements IZkConnection {
         Stat stat = _zk.exists(path, false);
         if (stat != null) {
           return stat.getCtime();
-        } else {
-          return -1;
         }
+        return -1;
+    }
+
+    @Override
+    public String getServers() {
+        return _servers;
     }
 }

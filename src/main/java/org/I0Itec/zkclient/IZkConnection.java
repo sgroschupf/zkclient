@@ -28,4 +28,6 @@ interface IZkConnection {
     public States getZookeeperState();
 
     public long getCreateTime(String path) throws KeeperException, InterruptedException;
+
+    public String getServers();
 }

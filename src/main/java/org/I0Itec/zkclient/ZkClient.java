@@ -671,7 +671,7 @@ public class ZkClient implements Watcher {
         try {
             getEventLock().lockInterruptibly();
             setShutdownTrigger(false);
-            _eventThread = new ZkEventThread();
+            _eventThread = new ZkEventThread(_connection.getServers());
             _eventThread.start();
             _connection.connect(watcher);
 

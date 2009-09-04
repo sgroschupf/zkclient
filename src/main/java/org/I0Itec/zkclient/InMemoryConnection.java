@@ -240,4 +240,9 @@ public class InMemoryConnection implements IZkConnection {
         }
         return time;
     }
+
+    @Override
+    public String getServers() {
+        return "mem";
+    }
 }
