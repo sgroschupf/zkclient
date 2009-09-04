@@ -486,7 +486,7 @@ public class ZkClient implements Watcher {
     }
 
     public void waitUntilConnected() {
-        waitUntilConnected(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        waitUntilConnected(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     public boolean waitUntilConnected(long time, TimeUnit timeUnit) {
