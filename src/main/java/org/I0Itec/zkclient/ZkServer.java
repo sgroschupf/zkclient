@@ -59,7 +59,7 @@ public class ZkServer {
                 names += ",";
             }
         }
-        LOG.info("Starting ZkServer on: [" + names + "] ...");
+        LOG.info("Starting ZkServer on: [" + names + "] port " + _port + "...");
         startZooKeeperServer();
         _zkClient = new ZkClient("localhost:" + _port, 10000);
         _defaultNameSpace.createDefaultNameSpace(_zkClient);
