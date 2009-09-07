@@ -713,7 +713,7 @@ public class ZkClient implements Watcher {
         try {
             setShutdownTrigger(true);
             _eventThread.interrupt();
-            _eventThread.join();
+            _eventThread.join(2000);
             _connection.close();
         } catch (InterruptedException e) {
             throw new ZkInterruptedException(e);
