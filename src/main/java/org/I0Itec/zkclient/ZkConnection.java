@@ -2,8 +2,11 @@ package org.I0Itec.zkclient;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.I0Itec.zkclient.exception.ZkException;
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
@@ -14,9 +17,13 @@ import org.apache.zookeeper.data.Stat;
 
 public class ZkConnection implements IZkConnection {
 
+    private static final Logger LOG = Logger.getLogger(ZkConnection.class);
+
     /** It is recommended to use quite large sessions timeouts for Zookeeper. */
     private static final int DEFAULT_SESSION_TIMEOUT = 30000;
+    
     private ZooKeeper _zk = null;
+    private Lock _zookeeperLock = new ReentrantLock();
 
     private final String _servers;
     private final int _sessionTimeOut;
@@ -32,20 +39,32 @@ public class ZkConnection implements IZkConnection {
 
     @Override
     public void connect(Watcher watcher) {
-        if (_zk != null) {
-            throw new IllegalStateException("zk client has already been started");
-        }
+        _zookeeperLock.lock();
         try {
-            _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
-        } catch (IOException e) {
-            throw new ZkException("Unable to connect to " + _servers, e);
+            if (_zk != null) {
+                throw new IllegalStateException("zk client has already been started");
+            }
+            try {
+                LOG.debug("Creating new ZookKeeper instance to connect to " + _servers + ".");
+                _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
+            } catch (IOException e) {
+                throw new ZkException("Unable to connect to " + _servers, e);
+            }
+        } finally {
+            _zookeeperLock.unlock();
         }
     }
-    
+
     public void close() throws InterruptedException {
-        if (_zk != null) {
-            _zk.close();
-            _zk = null;
+        _zookeeperLock.lock();
+        try {
+            if (_zk != null) {
+                LOG.debug("Closing ZooKeeper connected to " + _servers);
+                _zk.close();
+                _zk = null;
+            }
+        } finally {
+            _zookeeperLock.unlock();
         }
     }
 
@@ -85,7 +104,7 @@ public class ZkConnection implements IZkConnection {
     public long getCreateTime(String path) throws KeeperException, InterruptedException {
         Stat stat = _zk.exists(path, false);
         if (stat != null) {
-          return stat.getCtime();
+            return stat.getCtime();
         }
         return -1;
     }
