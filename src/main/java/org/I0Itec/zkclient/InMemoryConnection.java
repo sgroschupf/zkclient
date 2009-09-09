@@ -11,11 +11,14 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.I0Itec.zkclient.exception.ZkException;
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
@@ -52,6 +55,17 @@ public class InMemoryConnection implements IZkConnection {
 
         public void send(WatchedEvent event) {
             _blockingQueue.add(event);
+        }
+    }
+
+    public InMemoryConnection() {
+        try {
+            create("/", null, CreateMode.PERSISTENT);
+        } catch (KeeperException e) {
+            throw ZkException.create(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ZkInterruptedException(e);
         }
     }
 
@@ -153,7 +167,7 @@ public class InMemoryConnection implements IZkConnection {
     @Override
     public List<String> getChildren(String path, boolean watch) throws KeeperException, InterruptedException {
         if (!exists(path, false)) {
-            throw new KeeperException.NoNodeException();
+            throw KeeperException.create(Code.NONODE, path);
         }
         if (exists(path, false) && watch) {
             installWatch(_nodeWatches, path);

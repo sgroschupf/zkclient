@@ -151,8 +151,8 @@ public class ZkClient implements Watcher {
         create(path, serializable, CreateMode.PERSISTENT);
     }
 
-    public void createPersistentSequential(String path, Serializable serializable) {
-        create(path, serializable, CreateMode.PERSISTENT_SEQUENTIAL);
+    public String createPersistentSequential(String path, Serializable serializable) {
+        return create(path, serializable, CreateMode.PERSISTENT_SEQUENTIAL);
     }
 
     public void createEphemeral(final String path) {
