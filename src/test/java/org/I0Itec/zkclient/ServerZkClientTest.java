@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.junit.After;
 import org.junit.Before;
@@ -173,9 +174,13 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         Thread thread = new Thread() {
             @Override
             public void run() {
-                while (!isInterrupted()) {
-                    _client.createPersistent("/test");
-                    _client.delete("/test");
+                try {
+                    while (!isInterrupted()) {
+                        _client.createPersistent("/test");
+                        _client.delete("/test");
+                    }
+                } catch (ZkInterruptedException e) {
+                    // ignore and finish
                 }
             }
         };
