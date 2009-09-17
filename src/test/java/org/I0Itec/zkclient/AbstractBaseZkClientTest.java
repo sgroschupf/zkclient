@@ -2,6 +2,8 @@ package org.I0Itec.zkclient;
 
 import static org.junit.Assert.*;
 
+import static org.mockito.Mockito.*;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -336,5 +338,35 @@ public abstract class AbstractBaseZkClientTest {
         long end = System.currentTimeMillis();
         long creationTime = _client.getCreationTime(path);
         assertTrue(start < creationTime && end > creationTime);
+    }
+
+    @Test
+    public void testNumberOfListeners() {
+        IZkChildListener zkChildListener = mock(IZkChildListener.class);
+        _client.subscribeChildChanges("/", zkChildListener);
+        assertEquals(1, _client.numberOfListeners());
+
+        IZkDataListener zkDataListener = mock(IZkDataListener.class);
+        _client.subscribeDataChanges("/a", zkDataListener);
+        assertEquals(2, _client.numberOfListeners());
+
+        _client.subscribeDataChanges("/b", zkDataListener);
+        assertEquals(3, _client.numberOfListeners());
+
+        IZkStateListener zkStateListener = mock(IZkStateListener.class);
+        _client.subscribeStateChanges(zkStateListener);
+        assertEquals(4, _client.numberOfListeners());
+
+        _client.unsubscribeChildChanges("/", zkChildListener);
+        assertEquals(3, _client.numberOfListeners());
+
+        _client.unsubscribeDataChanges("/b", zkDataListener);
+        assertEquals(2, _client.numberOfListeners());
+
+        _client.unsubscribeDataChanges("/a", zkDataListener);
+        assertEquals(1, _client.numberOfListeners());
+
+        _client.unsubscribeStateChanges(zkStateListener);
+        assertEquals(0, _client.numberOfListeners());
     }
 }
