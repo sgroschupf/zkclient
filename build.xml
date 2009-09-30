@@ -70,6 +70,25 @@
 		<delete dir="${build.dir.eclipse}" />
 	</target>
 
+    <!-- Javadoc -->
+    <target name="javadoc" depends="jar" description="Generate javadoc">
+      <mkdir dir="${build.javadoc.dev}"/>
+      <javadoc
+         packagenames="org.I0Itec.*"
+         destdir="${build.javadoc}"
+         author="true"
+         version="true"
+         use="true"
+         >
+    	<packageset dir="${main.src.dir}">
+          <include name="org/I0Itec/**"/>
+    	</packageset>
+        <link href="${javadoc.link.java}"/>
+        <classpath refid="build.path.id" />
+        <classpath path="${main.res.dir}" />
+      </javadoc>
+    </target>	
+
 	<target name="compile" depends="install-ivy" description="--> compile main classes">
 		<ivy:resolve useOrigin="true" conf="compile"/>
 		<mkdir dir="${build.dir.main-classes}" />
