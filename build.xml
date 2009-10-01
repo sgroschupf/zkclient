@@ -5,7 +5,6 @@
 		<mkdir dir="${ivy.jar.dir}" />
 		<echo message="installing ivy..." />
 		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" />
-		<get src="http://repo1.maven.org/maven2/com/jcraft/jsch/${jcraft.install.version}/jsch-${jcraft.install.version}.jar" dest="${jcraft.jar.file}" usetimestamp="true" />
 	</target>
 
     <target name="check-ivy-available">
