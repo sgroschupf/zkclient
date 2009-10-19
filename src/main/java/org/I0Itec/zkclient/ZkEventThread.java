@@ -5,12 +5,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
- * All listeners registered at the {@link ZkClient} will be notified from this event thread. This is not prevent dead-lock situations. The ZkClient pulls some
- * information out of the Zookeeper events and signals {@link ZkLock} conditions. Using the same Zookeeper event thread to also notify listeners, would stop the
- * ZkClient from maintaining those properties as soon as one of the listeners doesn't return. This can for example happen, if one of the listeners waits until
- * ZkClient changes its status to SyncConnected.
+ * All listeners registered at the {@link ZkClient} will be notified from this event thread. This is to prevent
+ * dead-lock situations. The {@link ZkClient} pulls some information out of the {@link ZooKeeper} events to signal
+ * {@link ZkLock} conditions. Re-using the {@link ZooKeeper} event thread to also notify {@link ZkClient} listeners,
+ * would stop the ZkClient from receiving events from {@link ZooKeeper} as soon as one of the listeners blocks (because
+ * it is waiting for something). {@link ZkClient} would then for instance not be able to maintain it's connection state
+ * anymore.
  */
 class ZkEventThread extends Thread {
 
