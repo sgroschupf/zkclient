@@ -109,7 +109,9 @@
 			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
 		</tstamp>
 
-		<jar jarfile="${build.dir}/${jar.name}" basedir="${build.dir.main-classes}" />
+		<jar jarfile="${build.dir}/${jar.name}" basedir="${build.dir.main-classes}" >
+		    <fileset dir="${main.src.dir}" includes="**/*.java" />
+		</jar>
 	</target>
 
 	<target name="clean" description="--> clean">
