@@ -33,6 +33,7 @@ import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * Abstracts the interaction with zookeeper and allows permanent (not just one time) watches on nodes in ZooKeeper
@@ -460,7 +461,7 @@ public class ZkClient implements Watcher {
                     // reinstall watch
                     exists(path, true);
                     try {
-                        Serializable data = readData(path, true);
+                        Serializable data = readData(path, null, true);
                         listener.handleDataChange(path, data);
                     } catch (ZkNoNodeException e) {
                         listener.handleDataDeleted(path);
@@ -668,18 +669,23 @@ public class ZkClient implements Watcher {
         }
     }
 
+    public <T extends Serializable> T readData(String path) {
+        return readData(path, null);
+    }
+
+
     @SuppressWarnings("unchecked")
-    public <T extends Serializable> T readData(final String path) {
-        return (T) readData(path, hasListeners(path));
+    public <T extends Serializable> T readData(String path, Stat stat) {
+        return (T) readData(path, stat, hasListeners(path));
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Serializable> T readData(final String path, final boolean watch) {
+    private <T extends Serializable> T readData(final String path, final Stat stat, final boolean watch) {
         byte[] data = retryUntilConnected(new Callable<byte[]>() {
 
             @Override
             public byte[] call() throws Exception {
-                return _connection.readData(path, watch);
+                return _connection.readData(path, stat, watch);
             }
         });
         return (T) readSerializable(data);
@@ -702,12 +708,16 @@ public class ZkClient implements Watcher {
     }
 
     public void writeData(final String path, Serializable serializable) {
+        writeData(path, serializable, -1);
+    }
+
+    public void writeData(final String path, Serializable serializable, final int expectedVersion) {
         final byte[] data = toByteArray(serializable);
         retryUntilConnected(new Callable<Object>() {
 
             @Override
             public Object call() throws Exception {
-                _connection.writeData(path, data);
+                _connection.writeData(path, data, expectedVersion);
                 return null;
             }
         });

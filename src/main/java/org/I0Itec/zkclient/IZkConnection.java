@@ -6,6 +6,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.Stat;
 
 interface IZkConnection {
 
@@ -21,9 +22,9 @@ interface IZkConnection {
 
     List<String> getChildren(final String path, final boolean watch) throws KeeperException, InterruptedException;
 
-    public byte[] readData(String path, boolean watch) throws KeeperException, InterruptedException;
+    public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException;
 
-    public void writeData(String path, byte[] data) throws KeeperException, InterruptedException;
+    public void writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException;
 
     public States getZookeeperState();
 

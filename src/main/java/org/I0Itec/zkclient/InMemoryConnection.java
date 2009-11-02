@@ -22,6 +22,7 @@ import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.Stat;
 
 public class InMemoryConnection implements IZkConnection {
 
@@ -205,7 +206,7 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public byte[] readData(String path, boolean watch) throws KeeperException, InterruptedException {
+    public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException {
         if (watch) {
             installWatch(_dataWatches, path);
         }
@@ -222,7 +223,7 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public void writeData(String path, byte[] data) throws KeeperException, InterruptedException {
+    public void writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
         _lock.lock();
         try {
             checkWatch(_dataWatches, path, EventType.NodeDataChanged);

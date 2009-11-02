@@ -84,12 +84,16 @@ public class ZkConnection implements IZkConnection {
         return _zk.getChildren(path, watch);
     }
 
-    public byte[] readData(String path, boolean watch) throws KeeperException, InterruptedException {
-        return _zk.getData(path, watch, null);
+    public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException {
+        return _zk.getData(path, watch, stat);
     }
 
     public void writeData(String path, byte[] data) throws KeeperException, InterruptedException {
-        _zk.setData(path, data, -1);
+        writeData(path, data, -1);
+    }
+
+    public void writeData(String path, byte[] data, int version) throws KeeperException, InterruptedException {
+        _zk.setData(path, data, version);
     }
 
     public States getZookeeperState() {

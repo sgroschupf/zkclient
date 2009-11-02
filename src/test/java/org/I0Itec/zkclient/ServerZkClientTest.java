@@ -7,8 +7,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -191,5 +193,27 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         }
         thread.interrupt();
         thread.join();
+    }
+
+    @Test
+    public void testReadDataWithStat() {
+        _client.createPersistent("/a", "data");
+        Stat stat = new Stat();
+        _client.readData("/a", stat);
+        assertEquals(0, stat.getVersion());
+        assertTrue(stat.getDataLength() > 0);
+    }
+
+    @Test
+    public void testWriteDataWithExpectedVersion() {
+        _client.createPersistent("/a", "data");
+        _client.writeData("/a", "data2", 0);
+
+        try {
+            _client.writeData("/a", "data3", 0);
+            fail("expected exception");
+        } catch (ZkBadVersionException e) {
+            // expected
+        }
     }
 }
