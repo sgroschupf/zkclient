@@ -128,7 +128,7 @@ public class ZkServer {
             try {
                 _nioFactory.join();
             } catch (InterruptedException e) {
-                // ignore
+                Thread.currentThread().interrupt();
             }
             _nioFactory = null;
         }
