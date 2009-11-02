@@ -766,7 +766,7 @@ public class ZkClient implements Watcher {
         do {
             retry = false;
             try {
-                T oldData = readData(path, stat);
+                T oldData = (T) readData(path, stat);
                 T newData = updater.update(oldData);
                 writeData(path, newData, stat.getVersion());
             } catch (ZkBadVersionException e) {
