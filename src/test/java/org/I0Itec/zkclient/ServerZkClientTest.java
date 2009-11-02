@@ -93,7 +93,8 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         // Start server in 600ms, the session should have expired by then
         new DeferredGatewayStarter(gateway, 600).start();
 
-        // This should work as soon as a new session has been created (and the connection is reestablished), if it fails it throws a SessionExpiredException
+        // This should work as soon as a new session has been created (and the connection is reestablished), if it fails
+        // it throws a SessionExpiredException
         zkClient.retryUntilConnected(new Callable<Object>() {
 
             @Override

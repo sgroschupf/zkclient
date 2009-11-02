@@ -19,7 +19,7 @@ public class ZkConnection implements IZkConnection {
 
     private static final Logger LOG = Logger.getLogger(ZkConnection.class);
 
-    /** It is recommended to use quite large sessions timeouts for Zookeeper. */
+    /** It is recommended to use quite large sessions timeouts for ZooKeeper. */
     private static final int DEFAULT_SESSION_TIMEOUT = 30000;
     
     private ZooKeeper _zk = null;
