@@ -211,7 +211,9 @@ public class ZkClient implements Watcher {
      * @throws RuntimeException if any other exception occurs 
      */
     public String create(final String path, Serializable serializable, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        assert path != null;
+        if (path == null) {
+            throw new NullPointerException("path must not be null.");
+        }
         final byte[] data = serializable == null ? null : toByteArray(serializable);
 
         return retryUntilConnected(new Callable<String>() {
