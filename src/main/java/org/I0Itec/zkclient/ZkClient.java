@@ -672,7 +672,7 @@ public class ZkClient implements Watcher {
     }
 
     public <T extends Serializable> T readData(String path) {
-        return readData(path, null);
+        return (T) readData(path, null);
     }
 
 
