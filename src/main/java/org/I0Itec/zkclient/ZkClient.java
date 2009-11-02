@@ -18,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
+import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkMarshallingError;
@@ -710,7 +711,6 @@ public class ZkClient implements Watcher {
         return (T) readData(path, null);
     }
 
-
     @SuppressWarnings("unchecked")
     public <T extends Serializable> T readData(String path, Stat stat) {
         return (T) readData(path, stat, hasListeners(path));
@@ -744,8 +744,35 @@ public class ZkClient implements Watcher {
         }
     }
 
-    public void writeData(final String path, Serializable serializable) {
+    public void writeData(String path, Serializable serializable) {
         writeData(path, serializable, -1);
+    }
+
+    /**
+     * Updates data of an existing znode. The current content of the znode is passed to the {@link DataUpdater} that is
+     * passed into this method, which returns the new content. The new content is only written back to ZooKeeper if
+     * nobody has modified the given znode in between. If a concurrent change has been detected the new data of the
+     * znode is passed to the updater once again until the new contents can be successfully written back to ZooKeeper.
+     * 
+     * @param <T>
+     * @param path
+     *            The path of the znode.
+     * @param updater
+     *            Updater that creates the new contents.
+     */
+    public <T extends Serializable> void updateDataSerialized(String path, DataUpdater<T> updater) {
+        Stat stat = new Stat();
+        boolean retry;
+        do {
+            retry = false;
+            try {
+                T oldData = readData(path, stat);
+                T newData = updater.update(oldData);
+                writeData(path, newData, stat.getVersion());
+            } catch (ZkBadVersionException e) {
+                retry = true;
+            }
+        } while (retry);
     }
 
     public void writeData(final String path, Serializable serializable, final int expectedVersion) {

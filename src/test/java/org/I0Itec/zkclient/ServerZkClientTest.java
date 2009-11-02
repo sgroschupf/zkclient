@@ -2,6 +2,7 @@ package org.I0Itec.zkclient;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -216,5 +217,40 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         } catch (ZkBadVersionException e) {
             // expected
         }
+    }
+
+    @Test
+    public void testUpdateSerialized() throws InterruptedException {
+        _client.createPersistent("/a", 0);
+
+        int numberOfThreads = 2;
+        final int numberOfIncrementsPerThread = 100;
+
+        List<Thread> threads = new ArrayList<Thread>();
+        for (int i = 0; i < numberOfThreads; i++) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    for (int j = 0; j < numberOfIncrementsPerThread; j++) {
+                        _client.updateDataSerialized("/a", new DataUpdater<Integer>() {
+
+                            @Override
+                            public Integer update(Integer integer) {
+                                return integer + 1;
+                            }
+                        });
+                    }
+                }
+            };
+            thread.start();
+            threads.add(thread);
+        }
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        Integer finalValue = _client.readData("/a");
+        assertEquals(numberOfIncrementsPerThread * numberOfThreads, finalValue.intValue());
     }
 }
