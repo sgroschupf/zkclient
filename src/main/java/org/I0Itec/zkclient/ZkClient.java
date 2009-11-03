@@ -415,7 +415,7 @@ public class ZkClient implements Watcher {
 
     private void fireNewSessionEvents() {
         for (final IZkStateListener stateListener : _stateListener) {
-            _eventThread.send(new ZkEvent("New session event sent to " + stateListener.getClass().getName()) {
+            _eventThread.send(new ZkEvent("New session event sent to " + stateListener) {
 
                 @Override
                 public void run() throws Exception {
@@ -427,7 +427,7 @@ public class ZkClient implements Watcher {
 
     private void fireStateChangedEvent(final KeeperState state) {
         for (final IZkStateListener stateListener : _stateListener) {
-            _eventThread.send(new ZkEvent("State changed to " + state + " sent to " + stateListener.getClass().getName()) {
+            _eventThread.send(new ZkEvent("State changed to " + state + " sent to " + stateListener) {
 
                 @Override
                 public void run() throws Exception {
@@ -487,7 +487,7 @@ public class ZkClient implements Watcher {
 
     private void fireDataChangedEvents(final String path, Set<IZkDataListener> listeners) {
         for (final IZkDataListener listener : listeners) {
-            _eventThread.send(new ZkEvent("Data of " + path + " changed sent to " + listener.getClass().getName()) {
+            _eventThread.send(new ZkEvent("Data of " + path + " changed sent to " + listener) {
 
                 @Override
                 public void run() throws Exception {
@@ -508,7 +508,7 @@ public class ZkClient implements Watcher {
         try {
             // reinstall the watch
             for (final IZkChildListener listener : childListeners) {
-                _eventThread.send(new ZkEvent("Children of " + path + " changed sent to " + listener.getClass().getName()) {
+                _eventThread.send(new ZkEvent("Children of " + path + " changed sent to " + listener) {
 
                     @Override
                     public void run() throws Exception {
