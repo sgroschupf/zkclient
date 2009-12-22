@@ -4,6 +4,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -55,6 +56,8 @@ class ZkEventThread extends Thread {
                 try {
                     zkEvent.run();
                 } catch (InterruptedException e) {
+                    interrupt();
+                } catch (ZkInterruptedException e) {
                     interrupt();
                 } catch (Exception e) {
                     LOG.warn("Error handling event " + zkEvent, e);

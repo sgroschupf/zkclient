@@ -23,6 +23,7 @@ import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
+import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
@@ -116,6 +117,9 @@ public class ZkClient implements Watcher {
             if (listeners != null) {
                 listeners.remove(dataListener);
             }
+            if (listeners == null || listeners.isEmpty()) {
+                _dataListener.remove(path);
+            }
         }
     }
 
@@ -159,7 +163,40 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public void createPersistent(String path) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        create(path, null, CreateMode.PERSISTENT);
+        createPersistent(path, false);
+    }
+
+    /**
+     * Create a persistent node.
+     * 
+     * @param path
+     * @param createParents
+     *            if true all parent dirs are created as well and no {@link ZkNodeExistsException} is thrown in case the
+     *            path already exists
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public void createPersistent(String path, boolean createParents) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+        try {
+            create(path, null, CreateMode.PERSISTENT);
+        } catch (ZkNodeExistsException e) {
+            if (!createParents) {
+                throw e;
+            }
+        } catch (ZkNoNodeException e) {
+            if (!createParents) {
+                throw e;
+            }
+            String parentDir = path.substring(0, path.lastIndexOf('/'));
+            createPersistent(parentDir, createParents);
+            createPersistent(path, createParents);
+        }
     }
 
     /**
@@ -383,7 +420,6 @@ public class ZkClient implements Watcher {
 
     private boolean exists(final String path, final boolean watch) {
         return retryUntilConnected(new Callable<Boolean>() {
-
             @Override
             public Boolean call() throws Exception {
                 return _connection.exists(path, watch);
@@ -467,7 +503,6 @@ public class ZkClient implements Watcher {
     }
 
     private void processDataOrChildChange(WatchedEvent event) {
-        // ZkEventType eventType = ZkEventType.getMappedType(event.getType());
         final String path = event.getPath();
 
         if (event.getType() == EventType.NodeChildrenChanged || event.getType() == EventType.NodeCreated || event.getType() == EventType.NodeDeleted) {
@@ -708,7 +743,19 @@ public class ZkClient implements Watcher {
     }
 
     public <T extends Serializable> T readData(String path) {
-        return (T) readData(path, null);
+        return (T) readData(path, false);
+    }
+
+    public <T extends Serializable> T readData(String path, boolean returnNullIfPathNotExists) {
+        T data = null;
+        try {
+            data = (T) readData(path, null);
+        } catch (ZkNoNodeException e) {
+            if (!returnNullIfPathNotExists) {
+                throw e;
+            }
+        }
+        return data;
     }
 
     @SuppressWarnings("unchecked")
@@ -875,7 +922,7 @@ public class ZkClient implements Watcher {
     }
 
     /**
-     * Close the client. 
+     * Close the client.
      * 
      * @throws ZkInterruptedException
      */
@@ -928,7 +975,7 @@ public class ZkClient implements Watcher {
             listeners += dataListeners.size();
         }
         listeners += _stateListener.size();
-        
+
         return listeners;
     }
 }
