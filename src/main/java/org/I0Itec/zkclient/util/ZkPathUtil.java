@@ -12,7 +12,7 @@ public class ZkPathUtil {
 
     public static String toString(ZkClient zkClient, String startPath, PathFilter pathFilter) {
         final int level = 1;
-        final StringBuilder builder = new StringBuilder(startPath.substring(startPath.lastIndexOf("/")));
+        final StringBuilder builder = new StringBuilder("+ (" + startPath + ")");
         builder.append("\n");
         addChildrenToStringBuilder(zkClient, pathFilter, level, builder, startPath);
         return builder.toString();
@@ -27,9 +27,11 @@ public class ZkPathUtil {
             } else {
                 nestedPath = startPath + "/" + node;
             }
-            if (pathFilter.accept(nestedPath)) {
+            if (pathFilter.showChilds(nestedPath)) {
                 builder.append(getSpaces(level - 1) + "'-" + "+" + node + "\n");
                 addChildrenToStringBuilder(zkClient, pathFilter, level + 1, builder, nestedPath);
+            } else {
+                builder.append(getSpaces(level - 1) + "'-" + "-" + node + " (contents hidden)\n");
             }
         }
     }
@@ -45,13 +47,14 @@ public class ZkPathUtil {
     public static interface PathFilter {
 
         public static PathFilter ALL = new PathFilter() {
+
             @Override
-            public boolean accept(String path) {
+            public boolean showChilds(String path) {
                 return true;
             }
         };
 
-        boolean accept(String path);
+        boolean showChilds(String path);
     }
 
 }

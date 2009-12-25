@@ -31,17 +31,16 @@ public class ZkPathUtilTest extends TestCase {
         // path filtering
         stringRepresentation = ZkPathUtil.toString(_client, "/", new ZkPathUtil.PathFilter() {
             @Override
-            public boolean accept(String path) {
+            public boolean showChilds(String path) {
                 return !file2.equals(path);
             }
         });
         assertTrue(stringRepresentation.contains("file1"));
-        assertFalse(stringRepresentation.contains("file2"));
+        assertTrue(stringRepresentation.contains("file2"));
         assertFalse(stringRepresentation.contains("file3"));
 
         // start path
         stringRepresentation = ZkPathUtil.toString(_client, file2, ZkPathUtil.PathFilter.ALL);
-        System.out.println(stringRepresentation);
         assertFalse(stringRepresentation.contains("file1"));
         assertTrue(stringRepresentation.contains("file2"));
         assertTrue(stringRepresentation.contains("file3"));
