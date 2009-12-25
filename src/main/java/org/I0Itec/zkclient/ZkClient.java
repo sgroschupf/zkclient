@@ -25,6 +25,7 @@ import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -44,7 +45,7 @@ public class ZkClient implements Watcher {
 
     private final static Logger LOG = Logger.getLogger(ZkClient.class);
 
-    private IZkConnection _connection;
+    protected IZkConnection _connection;
     private final Map<String, Set<IZkChildListener>> _childListener = new ConcurrentHashMap<String, Set<IZkChildListener>>();
     private final ConcurrentHashMap<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
     private final Set<IZkStateListener> _stateListener = new CopyOnWriteArraySet<IZkStateListener>();
@@ -395,7 +396,7 @@ public class ZkClient implements Watcher {
         return getChildren(path, hasListeners(path));
     }
 
-    private List<String> getChildren(final String path, final boolean watch) {
+    protected List<String> getChildren(final String path, final boolean watch) {
         return retryUntilConnected(new Callable<List<String>>() {
             @Override
             public List<String> call() throws Exception {
@@ -418,7 +419,7 @@ public class ZkClient implements Watcher {
         }
     }
 
-    private boolean exists(final String path, final boolean watch) {
+    protected boolean exists(final String path, final boolean watch) {
         return retryUntilConnected(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -590,39 +591,11 @@ public class ZkClient implements Watcher {
     }
 
     public void showFolders(OutputStream output) {
-        final int level = 1;
-        final StringBuilder builder = new StringBuilder();
-        final String startPath = "/";
-        addChildrenToStringBuilder(level, builder, startPath);
         try {
-            output.write(builder.toString().getBytes());
+            output.write(ZkPathUtil.toString(this).getBytes());
         } catch (final IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private void addChildrenToStringBuilder(final int level, final StringBuilder builder, final String startPath) {
-        final List<String> children = getChildren(startPath);
-        for (final String node : children) {
-            builder.append(getSpaces(level - 1) + "'-" + "+" + node + "\n");
-
-            String nestedPath;
-            if (startPath.endsWith("/")) {
-                nestedPath = startPath + node;
-            } else {
-                nestedPath = startPath + "/" + node;
-            }
-
-            addChildrenToStringBuilder(level + 1, builder, nestedPath);
-        }
-    }
-
-    private String getSpaces(final int level) {
-        String s = "";
-        for (int i = 0; i < level; i++) {
-            s += "  ";
-        }
-        return s;
     }
 
     public void waitUntilConnected() throws ZkInterruptedException {
@@ -764,7 +737,7 @@ public class ZkClient implements Watcher {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Serializable> T readData(final String path, final Stat stat, final boolean watch) {
+    protected <T extends Serializable> T readData(final String path, final Stat stat, final boolean watch) {
         byte[] data = retryUntilConnected(new Callable<byte[]>() {
 
             @Override

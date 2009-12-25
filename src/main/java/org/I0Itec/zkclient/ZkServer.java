@@ -65,7 +65,6 @@ public class ZkServer {
         _defaultNameSpace.createDefaultNameSpace(_zkClient);
     }
 
- 
     private void startZooKeeperServer() {
         final String[] localhostHostNames = NetworkUtil.getLocalHostNames();
         final String servers = "localhost:" + _port;
@@ -94,9 +93,9 @@ public class ZkServer {
                 }
                 // single zk server
                 LOG.info("Start single zookeeper server...");
-                startSingleZkServer(_tickTime, dataDir, dataLogDir, port);
                 LOG.info("data dir: " + dataDir.getAbsolutePath());
                 LOG.info("data log dir: " + dataLogDir.getAbsolutePath());
+                startSingleZkServer(_tickTime, dataDir, dataLogDir, port);
             } else {
                 throw new IllegalStateException("Zookeeper port " + port + " was already in use. Running in single machine mode?");
             }
