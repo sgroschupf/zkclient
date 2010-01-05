@@ -78,7 +78,7 @@ public class GatewayThread extends Thread {
                             runningThreads.remove(this);
                         }
                     }
-                    
+
                     @Override
                     public void interrupt() {
                         try {
@@ -87,7 +87,7 @@ public class GatewayThread extends Thread {
                         } catch (IOException e) {
                             LOG.error("error on stopping closing sockets", e);
                         }
-                        
+
                         super.interrupt();
                     }
                 };
@@ -117,6 +117,9 @@ public class GatewayThread extends Thread {
                 readThread.start();
             }
         } catch (SocketException e) {
+            if (!_running) {
+                throw ExceptionUtil.convertToRuntimeException(e);
+            }
             LOG.info("Stopping gateway");
         } catch (Exception e) {
             LOG.error("error on gateway execution", e);
