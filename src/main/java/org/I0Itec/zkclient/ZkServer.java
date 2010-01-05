@@ -48,6 +48,10 @@ public class ZkServer {
         _tickTime = tickTime;
     }
 
+    public int getPort() {
+        return _port;
+    }
+
     @PostConstruct
     public void start() {
         final String[] localHostNames = NetworkUtil.getLocalHostNames();
