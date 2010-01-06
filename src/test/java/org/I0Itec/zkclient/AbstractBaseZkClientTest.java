@@ -1,10 +1,11 @@
 package org.I0Itec.zkclient;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
-import static org.mockito.Mockito.*;
-
-import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +105,7 @@ public abstract class AbstractBaseZkClientTest {
         IZkDataListener listener = new IZkDataListener() {
 
             @Override
-            public void handleDataChange(String dataPath, Serializable data) throws Exception {
+            public void handleDataChange(String dataPath, Object data) throws Exception {
                 holder.set((String) data);
             }
 
@@ -138,7 +139,7 @@ public abstract class AbstractBaseZkClientTest {
         IZkDataListener listener = new IZkDataListener() {
 
             @Override
-            public void handleDataChange(String dataPath, Serializable data) throws Exception {
+            public void handleDataChange(String dataPath, Object data) throws Exception {
                 countChanged.incrementAndGet();
             }
 

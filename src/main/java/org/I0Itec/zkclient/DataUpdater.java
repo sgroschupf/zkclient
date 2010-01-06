@@ -1,13 +1,12 @@
 package org.I0Itec.zkclient;
 
-import java.io.Serializable;
 
 /**
  * Updates the data of a znode. This is used together with {@link ZkClient#updateDataSerialized(String, DataUpdater)}.
  * 
  * @param <T>
  */
-public interface DataUpdater<T extends Serializable> {
+public interface DataUpdater<T extends Object> {
 
     /**
      * Updates the current data of a znode.

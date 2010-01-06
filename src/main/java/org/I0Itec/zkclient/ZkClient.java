@@ -1,12 +1,7 @@
 package org.I0Itec.zkclient;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +16,11 @@ import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.I0Itec.zkclient.serialize.SerializableSerializer;
+import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
@@ -55,26 +51,40 @@ public class ZkClient implements Watcher {
     private ZkEventThread _eventThread;
     // TODO PVo remove this later
     private Thread _zookeeperEventThread;
+    private ZkSerializer _zkSerializer;
 
-    public ZkClient(IZkConnection connection) {
-        this(connection, Integer.MAX_VALUE);
-    }
-
-    public ZkClient(IZkConnection connection, int connectionTimeout) {
-        _connection = connection;
-        connect(connectionTimeout, this);
-    }
-
-    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) {
-        this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout);
+    public ZkClient(String serverstring) {
+        this(serverstring, Integer.MAX_VALUE);
     }
 
     public ZkClient(String zkServers, int connectionTimeout) {
         this(new ZkConnection(zkServers), connectionTimeout);
     }
 
-    public ZkClient(String serverstring) {
-        this(serverstring, Integer.MAX_VALUE);
+    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout) {
+        this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout);
+    }
+
+    public ZkClient(String zkServers, int sessionTimeout, int connectionTimeout, ZkSerializer zkSerializer) {
+        this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout, zkSerializer);
+    }
+
+    public ZkClient(IZkConnection connection) {
+        this(connection, Integer.MAX_VALUE);
+    }
+
+    public ZkClient(IZkConnection connection, int connectionTimeout) {
+        this(connection, connectionTimeout, new SerializableSerializer());
+    }
+
+    public ZkClient(IZkConnection zkConnection, int connectionTimeout, ZkSerializer zkSerializer) {
+        _connection = zkConnection;
+        _zkSerializer = zkSerializer;
+        connect(connectionTimeout, this);
+    }
+
+    public void setZkSerializer(ZkSerializer zkSerializer) {
+        _zkSerializer = zkSerializer;
     }
 
     public List<String> subscribeChildChanges(String path, IZkChildListener listener) {
@@ -204,7 +214,7 @@ public class ZkClient implements Watcher {
      * Create a persistent node.
      * 
      * @param path
-     * @param serializable
+     * @param data
      * @throws ZkInterruptedException
      *             if operation was interrupted, or a required reconnection got interrupted
      * @throws IllegalArgumentException
@@ -214,15 +224,15 @@ public class ZkClient implements Watcher {
      * @throws RuntimeException
      *             if any other exception occurs
      */
-    public void createPersistent(String path, Serializable serializable) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        create(path, serializable, CreateMode.PERSISTENT);
+    public void createPersistent(String path, Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+        create(path, data, CreateMode.PERSISTENT);
     }
 
     /**
      * Create a persistent, sequental node.
      * 
      * @param path
-     * @param serializable
+     * @param data
      * @return create node's path
      * @throws ZkInterruptedException
      *             if operation was interrupted, or a required reconnection got interrupted
@@ -233,8 +243,8 @@ public class ZkClient implements Watcher {
      * @throws RuntimeException
      *             if any other exception occurs
      */
-    public String createPersistentSequential(String path, Serializable serializable) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        return create(path, serializable, CreateMode.PERSISTENT_SEQUENTIAL);
+    public String createPersistentSequential(String path, Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+        return create(path, data, CreateMode.PERSISTENT_SEQUENTIAL);
     }
 
     /**
@@ -258,7 +268,7 @@ public class ZkClient implements Watcher {
      * Create a node.
      * 
      * @param path
-     * @param serializable
+     * @param data
      * @param mode
      * @return create node's path
      * @throws ZkInterruptedException
@@ -270,38 +280,26 @@ public class ZkClient implements Watcher {
      * @throws RuntimeException
      *             if any other exception occurs
      */
-    public String create(final String path, Serializable serializable, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+    public String create(final String path, Object data, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
         if (path == null) {
             throw new NullPointerException("path must not be null.");
         }
-        final byte[] data = serializable == null ? null : toByteArray(serializable);
+        final byte[] bytes = data == null ? null : serialize(data);
 
         return retryUntilConnected(new Callable<String>() {
 
             @Override
             public String call() throws Exception {
-                return _connection.create(path, data, mode);
+                return _connection.create(path, bytes, mode);
             }
         });
-    }
-
-    private byte[] toByteArray(Serializable serializable) {
-        try {
-            ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-            ObjectOutputStream stream = new ObjectOutputStream(byteArrayOS);
-            stream.writeObject(serializable);
-            stream.close();
-            return byteArrayOS.toByteArray();
-        } catch (IOException e) {
-            throw new ZkMarshallingError(e);
-        }
     }
 
     /**
      * Create an ephemeral node.
      * 
      * @param path
-     * @param serializable
+     * @param data
      * @throws ZkInterruptedException
      *             if operation was interrupted, or a required reconnection got interrupted
      * @throws IllegalArgumentException
@@ -311,15 +309,15 @@ public class ZkClient implements Watcher {
      * @throws RuntimeException
      *             if any other exception occurs
      */
-    public void createEphemeral(final String path, final Serializable serializable) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        create(path, serializable, CreateMode.EPHEMERAL);
+    public void createEphemeral(final String path, final Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+        create(path, data, CreateMode.EPHEMERAL);
     }
 
     /**
      * Create an ephemeral, sequential node.
      * 
      * @param path
-     * @param serializable
+     * @param data
      * @return created path
      * @throws ZkInterruptedException
      *             if operation was interrupted, or a required reconnection got interrupted
@@ -330,8 +328,8 @@ public class ZkClient implements Watcher {
      * @throws RuntimeException
      *             if any other exception occurs
      */
-    public String createEphemeralSequential(final String path, final Serializable serializable) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        return create(path, serializable, CreateMode.EPHEMERAL_SEQUENTIAL);
+    public String createEphemeralSequential(final String path, final Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+        return create(path, data, CreateMode.EPHEMERAL_SEQUENTIAL);
     }
 
     public void process(WatchedEvent event) {
@@ -530,7 +528,7 @@ public class ZkClient implements Watcher {
                     // reinstall watch
                     exists(path, true);
                     try {
-                        Serializable data = readData(path, null, true);
+                        Object data = readData(path, null, true);
                         listener.handleDataChange(path, data);
                     } catch (ZkNoNodeException e) {
                         listener.handleDataDeleted(path);
@@ -715,11 +713,23 @@ public class ZkClient implements Watcher {
         }
     }
 
-    public <T extends Serializable> T readData(String path) {
+    private byte[] serialize(Object data) {
+        return _zkSerializer.serialize(data);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Object> T derializable(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+        return (T) _zkSerializer.deserialize(data);
+    }
+
+    public <T extends Object> T readData(String path) {
         return (T) readData(path, false);
     }
 
-    public <T extends Serializable> T readData(String path, boolean returnNullIfPathNotExists) {
+    public <T extends Object> T readData(String path, boolean returnNullIfPathNotExists) {
         T data = null;
         try {
             data = (T) readData(path, null);
@@ -732,12 +742,12 @@ public class ZkClient implements Watcher {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Serializable> T readData(String path, Stat stat) {
+    public <T extends Object> T readData(String path, Stat stat) {
         return (T) readData(path, stat, hasListeners(path));
     }
 
     @SuppressWarnings("unchecked")
-    protected <T extends Serializable> T readData(final String path, final Stat stat, final boolean watch) {
+    protected <T extends Object> T readData(final String path, final Stat stat, final boolean watch) {
         byte[] data = retryUntilConnected(new Callable<byte[]>() {
 
             @Override
@@ -745,27 +755,11 @@ public class ZkClient implements Watcher {
                 return _connection.readData(path, stat, watch);
             }
         });
-        return (T) readSerializable(data);
+        return (T) derializable(data);
     }
 
-    @SuppressWarnings("unchecked")
-    private <T extends Serializable> T readSerializable(byte[] data) {
-        if (data == null) {
-            return null;
-        }
-        try {
-            ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(data));
-            Object object = inputStream.readObject();
-            return (T) object;
-        } catch (ClassNotFoundException e) {
-            throw new ZkMarshallingError("Unable to find object class.", e);
-        } catch (IOException e) {
-            throw new ZkMarshallingError(e);
-        }
-    }
-
-    public void writeData(String path, Serializable serializable) {
-        writeData(path, serializable, -1);
+    public void writeData(String path, Object object) {
+        writeData(path, object, -1);
     }
 
     /**
@@ -780,7 +774,7 @@ public class ZkClient implements Watcher {
      * @param updater
      *            Updater that creates the new contents.
      */
-    public <T extends Serializable> void updateDataSerialized(String path, DataUpdater<T> updater) {
+    public <T extends Object> void updateDataSerialized(String path, DataUpdater<T> updater) {
         Stat stat = new Stat();
         boolean retry;
         do {
@@ -795,8 +789,8 @@ public class ZkClient implements Watcher {
         } while (retry);
     }
 
-    public void writeData(final String path, Serializable serializable, final int expectedVersion) {
-        final byte[] data = toByteArray(serializable);
+    public void writeData(final String path, Object datat, final int expectedVersion) {
+        final byte[] data = serialize(datat);
         retryUntilConnected(new Callable<Object>() {
 
             @Override

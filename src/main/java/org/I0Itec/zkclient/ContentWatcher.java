@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import java.io.Serializable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -12,7 +11,7 @@ import org.apache.log4j.Logger;
  * @param <T>
  *            The data type that is being watched.
  */
-public final class ContentWatcher<T extends Serializable> implements IZkDataListener {
+public final class ContentWatcher<T extends Object> implements IZkDataListener {
 
     private static final Logger LOG = Logger.getLogger(ContentWatcher.class);
 
@@ -60,8 +59,8 @@ public final class ContentWatcher<T extends Serializable> implements IZkDataList
 
     @SuppressWarnings("unchecked")
     @Override
-    public void handleDataChange(String dataPath, Serializable serializable) {
-        setContent((T) serializable);
+    public void handleDataChange(String dataPath, Object data) {
+        setContent((T) data);
     }
 
     @Override
