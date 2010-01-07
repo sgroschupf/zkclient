@@ -13,6 +13,8 @@ import java.util.Set;
 
 public class NetworkUtil {
 
+    public final static String OVERWRITE_HOSTNAME_SYSTEM_PROPERTY = "zkclient.hostname.overwritten";
+
     public static String[] getLocalHostNames() {
         final Set<String> hostNames = new HashSet<String>();
         // we add localhost to this set manually, because if the ip 127.0.0.1 is
@@ -92,6 +94,10 @@ public class NetworkUtil {
     }
 
     public static String getLocalhostName() {
+        String property = System.getProperty(OVERWRITE_HOSTNAME_SYSTEM_PROPERTY);
+        if (property != null && property.trim().length() > 0) {
+            return property;
+        }
         try {
             return InetAddress.getLocalHost().getHostName();
         } catch (final UnknownHostException e) {
