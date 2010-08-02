@@ -17,6 +17,7 @@ package org.I0Itec.zkclient;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 
 import javax.annotation.PostConstruct;
@@ -124,7 +125,7 @@ public class ZkServer {
     private void startSingleZkServer(final int tickTime, final File dataDir, final File dataLogDir, final int port) {
         try {
             _zk = new ZooKeeperServer(dataDir, dataLogDir, tickTime);
-            _nioFactory = new NIOServerCnxn.Factory(port);
+            _nioFactory = new NIOServerCnxn.Factory(new InetSocketAddress(port));
             _nioFactory.startup(_zk);
         } catch (IOException e) {
             throw new ZkException("Unable to start single ZooKeeper server.", e);

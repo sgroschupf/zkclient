@@ -24,7 +24,7 @@
         <dependency org="prantl.ant.eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
 
         <!-- Zookeeper -->
-        <dependency org="x" name="zookeeper" rev="3.2.2" conf="compile" />
+        <dependency org="x" name="zookeeper" rev="3.3.1" conf="compile" />
 
         <!-- Logging -->
         <dependency org="log4j" name="log4j" rev="1.2.14" conf="compile" />
