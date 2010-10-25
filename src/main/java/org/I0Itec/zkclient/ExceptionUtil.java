@@ -19,7 +19,7 @@ import org.I0Itec.zkclient.exception.ZkInterruptedException;
 
 public class ExceptionUtil {
 
-    public static RuntimeException convertToRuntimeException(Exception e) {
+    public static RuntimeException convertToRuntimeException(Throwable e) {
         if (e instanceof RuntimeException) {
             return (RuntimeException) e;
         }
@@ -40,7 +40,7 @@ public class ExceptionUtil {
         }
     }
 
-    public static void rethrowInterruptedException(Exception e) throws InterruptedException {
+    public static void rethrowInterruptedException(Throwable e) throws InterruptedException {
         if (e instanceof InterruptedException) {
             throw (InterruptedException) e;
         }
