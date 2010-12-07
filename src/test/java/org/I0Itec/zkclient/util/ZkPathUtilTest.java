@@ -17,7 +17,7 @@ package org.I0Itec.zkclient.util;
 
 import junit.framework.TestCase;
 
-import org.I0Itec.zkclient.TestUtil;
+import org.I0Itec.zkclient.Helper;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkServer;
 
@@ -27,7 +27,7 @@ public class ZkPathUtilTest extends TestCase {
     protected ZkClient _client;
 
     public void testToString() throws Exception {
-        _zkServer = TestUtil.startZkServer("ZkPathUtilTest", 4711);
+        _zkServer = Helper.startZkServer("ZkPathUtilTest", 4711);
         _client = new ZkClient("localhost:4711", 5000);
         final String file1 = "/files/file1";
         final String file2 = "/files/file2";

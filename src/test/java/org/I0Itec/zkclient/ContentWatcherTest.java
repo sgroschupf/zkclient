@@ -36,7 +36,7 @@ public class ContentWatcherTest {
     @Before
     public void setUp() throws Exception {
         LOG.info("------------ BEFORE -------------");
-        _zkServer = TestUtil.startZkServer("ContentWatcherTest", 4711);
+        _zkServer = Helper.startZkServer("ContentWatcherTest", 4711);
         _zkClient = _zkServer.getZkClient();
     }
 
@@ -59,7 +59,7 @@ public class ContentWatcherTest {
         // update the content
         _zkClient.writeData(FILE_NAME, "b");
 
-        String contentFromWatcher = TestUtil.waitUntil("b", new Callable<String>() {
+        String contentFromWatcher = Helper.waitUntil("b", new Callable<String>() {
 
             @Override
             public String call() throws Exception {
@@ -139,7 +139,7 @@ public class ContentWatcherTest {
         final ContentWatcher<String> watcher = new ContentWatcher<String>(zkClient, FILE_NAME);
         watcher.start();
 
-        TestUtil.waitUntil("b", new Callable<String>() {
+        Helper.waitUntil("b", new Callable<String>() {
 
             @Override
             public String call() throws Exception {

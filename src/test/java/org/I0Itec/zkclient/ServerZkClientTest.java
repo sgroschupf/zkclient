@@ -42,7 +42,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        _zkServer = TestUtil.startZkServer("ZkClientTest_" + _counter.addAndGet(1), 4711);
+        _zkServer = Helper.startZkServer("ZkClientTest_" + _counter.addAndGet(1), 4711);
         _client = new ZkClient("localhost:4711", 5000);
     }
 
@@ -101,7 +101,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         LOG.info("--- testRetryUntilConnected_SessionExpiredException");
 
         // Use a tick time of 100ms, because the minimum session timeout is 2 x tick-time.
-        // ZkServer zkServer = TestUtil.startZkServer("ZkClientTest-testSessionExpiredException", 4711, 100);
+        // ZkServer zkServer = Helper.startZkServer("ZkClientTest-testSessionExpiredException", 4711, 100);
         Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
 
@@ -159,7 +159,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         Thread.sleep(sessionTimeout * 3);
         gateway.start();
 
-        Boolean hasOneChild = TestUtil.waitUntil(true, new Callable<Boolean>() {
+        Boolean hasOneChild = Helper.waitUntil(true, new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {

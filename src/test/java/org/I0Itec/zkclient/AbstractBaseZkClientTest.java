@@ -133,7 +133,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path, "aaa");
 
         // wait some time to make sure the event was triggered
-        String contentFromHolder = TestUtil.waitUntil("b", new Callable<String>() {
+        String contentFromHolder = Helper.waitUntil("b", new Callable<String>() {
 
             @Override
             public String call() throws Exception {
@@ -169,7 +169,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path, "aaa");
 
         // wait some time to make sure the event was triggered
-        TestUtil.waitUntil(1, new Callable<Integer>() {
+        Helper.waitUntil(1, new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -184,7 +184,7 @@ public abstract class AbstractBaseZkClientTest {
         // delete node, this should trigger a delete event
         _client.delete(path);
         // wait some time to make sure the event was triggered
-        TestUtil.waitUntil(1, new Callable<Integer>() {
+        Helper.waitUntil(1, new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -199,7 +199,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path, "aaa");
 
         // wait some time to make sure the event was triggered
-        TestUtil.waitUntil(1, new Callable<Integer>() {
+        Helper.waitUntil(1, new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -212,7 +212,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.writeData(path, "bbb");
 
         // wait some time to make sure the event was triggered
-        TestUtil.waitUntil(2, new Callable<Integer>() {
+        Helper.waitUntil(2, new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -245,7 +245,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path);
 
         // wait some time to make sure the event was triggered
-        TestUtil.waitUntil(1, new Callable<Integer>() {
+        Helper.waitUntil(1, new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -262,7 +262,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path + "/child1");
 
         // wait some time to make sure the event was triggered
-        TestUtil.waitUntil(1, new Callable<Integer>() {
+        Helper.waitUntil(1, new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -281,7 +281,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.deleteRecursive(path);
 
         // wait some time to make sure the event was triggered
-        Boolean eventReceived = TestUtil.waitUntil(true, new Callable<Boolean>() {
+        Boolean eventReceived = Helper.waitUntil(true, new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
@@ -298,7 +298,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path);
 
         // wait some time to make sure the event was triggered
-        eventReceived = TestUtil.waitUntil(true, new Callable<Boolean>() {
+        eventReceived = Helper.waitUntil(true, new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
@@ -315,7 +315,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path + "/child");
 
         // wait some time to make sure the event was triggered
-        eventReceived = TestUtil.waitUntil(true, new Callable<Boolean>() {
+        eventReceived = Helper.waitUntil(true, new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
@@ -333,7 +333,7 @@ public abstract class AbstractBaseZkClientTest {
         _client.deleteRecursive(path);
 
         // wait some time to make sure the event was triggered
-        eventReceived = TestUtil.waitUntil(true, new Callable<Boolean>() {
+        eventReceived = Helper.waitUntil(true, new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {

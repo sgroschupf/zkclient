@@ -37,7 +37,7 @@ public class DistributedQueueTest {
 
     @Before
     public void setUp() throws IOException {
-        _zkServer = TestUtil.startZkServer("ZkClientTest-testDistributedQueue", 4711);
+        _zkServer = Helper.startZkServer("ZkClientTest-testDistributedQueue", 4711);
         _zkClient = _zkServer.getZkClient();
     }
 

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.mockito.exceptions.base.MockitoAssertionError;
 
-public class TestUtil {
+public class Helper {
 
     /**
      * This waits until the provided {@link Callable} returns an object that is equals to the given expected value or
