@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * All listeners registered at the {@link ZkClient} will be notified from this event thread. This is to prevent
@@ -74,8 +73,8 @@ class ZkEventThread extends Thread {
                     interrupt();
                 } catch (ZkInterruptedException e) {
                     interrupt();
-                } catch (Exception e) {
-                    LOG.warn("Error handling event " + zkEvent, e);
+                } catch (Throwable e) {
+                    LOG.error("Error handling event " + zkEvent, e);
                 }
                 LOG.debug("Delivering event #" + eventId + " done");
             }
