@@ -23,7 +23,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
 
-interface IZkConnection {
+public interface IZkConnection {
 
     public void connect(Watcher watcher);
 
