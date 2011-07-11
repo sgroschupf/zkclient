@@ -4,3 +4,4 @@
 .settings
 build-eclipse
 build
+junit*

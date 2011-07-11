@@ -23,17 +23,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
+import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
@@ -44,6 +46,7 @@ public class InMemoryConnection implements IZkConnection {
     private Lock _lock = new ReentrantLock(true);
     private Map<String, byte[]> _data = new HashMap<String, byte[]>();
     private Map<String, Long> _creationTime = new HashMap<String, Long>();
+    private final AtomicInteger sequence = new AtomicInteger(0);
 
     private Set<String> _dataWatches = new HashSet<String>();
     private Set<String> _nodeWatches = new HashSet<String>();
@@ -118,10 +121,15 @@ public class InMemoryConnection implements IZkConnection {
     public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException {
         _lock.lock();
         try {
+
+            if (mode.isSequential()) {
+                final int newSequence = sequence.getAndIncrement();
+                path = path + ZkPathUtil.leadingZeros(newSequence, 10);
+            }
+
             if (exists(path, false)) {
                 throw new KeeperException.NodeExistsException();
             }
-
             _data.put(path, data);
             _creationTime.put(path, System.currentTimeMillis());
             checkWatch(_nodeWatches, path, EventType.NodeCreated);

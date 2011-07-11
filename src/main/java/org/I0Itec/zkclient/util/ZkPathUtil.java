@@ -21,6 +21,10 @@ import org.I0Itec.zkclient.ZkClient;
 
 public class ZkPathUtil {
 
+    public static String leadingZeros(long number, int numberOfLeadingZeros) {
+        return String.format("%0" + numberOfLeadingZeros + "d", number);
+    }
+
     public static String toString(ZkClient zkClient) {
         return toString(zkClient, "/", PathFilter.ALL);
     }

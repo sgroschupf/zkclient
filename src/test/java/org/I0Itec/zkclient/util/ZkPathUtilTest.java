@@ -62,4 +62,8 @@ public class ZkPathUtilTest extends TestCase {
 
         _zkServer.shutdown();
     }
+
+    public void testLeadingZeros() throws Exception {
+        assertEquals("0000000001", ZkPathUtil.leadingZeros(1, 10));
+    }
 }
