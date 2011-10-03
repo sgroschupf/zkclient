@@ -22,10 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.I0Itec.zkclient.exception.ZkException;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
@@ -91,12 +88,24 @@ public class ZkConnection implements IZkConnection {
         _zk.delete(path, -1);
     }
 
+    public void create(String path, byte[] data, CreateMode mode, AsyncCallback.StringCallback callback, Object context) throws KeeperException, InterruptedException {
+        _zk.create(path, data, Ids.OPEN_ACL_UNSAFE, mode, callback, context);
+    }
+
+    public void delete(String path, AsyncCallback.VoidCallback callback, Object context) throws InterruptedException, KeeperException {
+        _zk.delete(path, -1, callback, context);
+    }
+
     public boolean exists(String path, boolean watch) throws KeeperException, InterruptedException {
         return _zk.exists(path, watch) != null;
     }
 
     public List<String> getChildren(final String path, final boolean watch) throws KeeperException, InterruptedException {
         return _zk.getChildren(path, watch);
+    }
+
+    public void getChildren(final String path, final boolean watch, AsyncCallback.ChildrenCallback callback, Object context ) throws KeeperException, InterruptedException {
+        _zk.getChildren(path, watch, callback, context);
     }
 
     public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException {

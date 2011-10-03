@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.jaya.free.fr/misc/ivy/ivy.txt">
-    <info organisation="com.101tec" module="zkclient" />
+<ivy-module version="2.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:e="http://ant.apache.org/ivy/extra"
+            xsi:noNamespaceSchemaLocation="http://www.jaya.free.fr/misc/ivy/ivy.txt">
+    <info organisation="com/github/sgroschupf" module="zkclient" />
 
     <!-- project configuration -->
     <configurations>
@@ -14,8 +17,12 @@
     </configurations>
 
     <publications>
-        <artifact name="zkclient" type="jar" conf="master" />
+        <artifact name="zkclient" type="jar" conf="master" />        
+        <!--<artifact name="zkclient" type="source" ext="-sources.jar" conf="master" e:classifier="sources"/>-->
+        <artifact name="zkclient" type="pom" conf="master" />
+    	<!--<artifact name="zkclient" type="javadocs"/>-->
     </publications>
+    
 
     <!-- dependencies -->
     <!-- e.g.:   <dependency org="apache" name="commons-collections" rev="3.1" conf="cc-impl->default"/> -->
@@ -24,10 +31,10 @@
         <dependency org="prantl.ant.eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
 
         <!-- Zookeeper -->
-        <dependency org="x" name="zookeeper" rev="3.3.1" conf="compile" />
+        <dependency org="org.apache.zookeeper" name="zookeeper" rev="3.3.3" conf="compile" />
 
         <!-- Logging -->
-        <dependency org="log4j" name="log4j" rev="1.2.14" conf="compile" />
+        <dependency org="log4j" name="log4j" rev="1.2.16" conf="compile" />
 
         <!-- Testing -->
         <dependency org="junit" name="junit" rev="4.7" conf="test" />

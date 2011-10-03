@@ -31,11 +31,8 @@ import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.I0Itec.zkclient.util.ZkPathUtil;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.KeeperException.Code;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
@@ -282,5 +279,20 @@ public class InMemoryConnection implements IZkConnection {
     @Override
     public String getServers() {
         return "mem";
+    }
+
+    @Override
+    public void create(String path, byte[] data, CreateMode mode, AsyncCallback.StringCallback callback, Object context) throws KeeperException, InterruptedException {
+        throw new KeeperException.UnimplementedException();
+    }
+
+    @Override
+    public void delete(String path, AsyncCallback.VoidCallback callback, Object context) throws InterruptedException, KeeperException {
+        throw new KeeperException.UnimplementedException();
+    }
+
+    @Override
+    public void getChildren(String path, boolean watch, AsyncCallback.ChildrenCallback callback, Object context) throws KeeperException, InterruptedException {
+        throw new KeeperException.UnimplementedException();
     }
 }

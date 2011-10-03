@@ -4,10 +4,10 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>zkclient</groupId>
+    <groupId>com.github.sgroschupf</groupId>
     <artifactId>zkclient</artifactId>
     <name>zkclient</name>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description />
 
@@ -17,14 +17,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.hadoop.zookeeper</groupId>
+            <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.2.1</version>
+            <version>3.3.3</version>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>1.2.14</version>
+            <version>1.2.16</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

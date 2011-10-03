@@ -112,6 +112,11 @@
 		<jar jarfile="${build.dir}/${jar.name}" basedir="${build.dir.main-classes}" >
 		    <fileset dir="${main.src.dir}" includes="**/*.java" />
 		</jar>
+
+        <jar jarfile="${build.dir}/${sources.jar.name}" whenempty="fail">
+            <fileset dir="src">
+            </fileset>
+        </jar>
 	</target>
 
 	<target name="clean" description="--> clean">
@@ -171,6 +176,12 @@
     </target>
 
 	<target name="install" depends="jar" description="--> copies jar file to build directory" >
-        <ivy:publish artifactspattern="build/[artifact]-[revision].[ext]" resolver="install" overwrite="true" pubrevision="${zkclient.version}" conf="compile, master"/>
+        <ivy:makepom ivyfile="ivy.xml"
+             pomfile="build/${ant.project.name}-${zkclient.version}.pom">
+    <mapping conf="default" scope="compile"/>
+    <mapping conf="runtime" scope="runtime"/>
+   </ivy:makepom>
+
+        <ivy:publish artifactspattern="build/[artifact]-[revision].[ext]" resolver="artifactory-publish" overwrite="true" pubrevision="${zkclient.version}" conf="compile, master"/>
 	</target>
 </project>

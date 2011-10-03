@@ -17,6 +17,7 @@ package org.I0Itec.zkclient;
 
 import java.util.List;
 
+import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
@@ -33,9 +34,15 @@ public interface IZkConnection {
 
     public void delete(String path) throws InterruptedException, KeeperException;
 
+    public void create(String path, byte[] data, CreateMode mode, AsyncCallback.StringCallback callback, Object context) throws KeeperException, InterruptedException;
+
+    public void delete(String path, AsyncCallback.VoidCallback callback, Object context) throws InterruptedException, KeeperException;
+
     boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException;
 
     List<String> getChildren(final String path, final boolean watch) throws KeeperException, InterruptedException;
+
+    public void getChildren(final String path, final boolean watch, AsyncCallback.ChildrenCallback callback, Object context ) throws KeeperException, InterruptedException;
 
     public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException;
 
