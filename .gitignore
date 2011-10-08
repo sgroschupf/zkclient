@@ -5,3 +5,9 @@
 build-eclipse
 build
 junit*
+.gradle
+*.iws
+*.ipr
+*.iml
+gradle*
+*gradle
