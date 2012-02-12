@@ -26,7 +26,9 @@ import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
@@ -221,6 +223,22 @@ public class ZkClient implements Watcher {
   public void createPersistent(String path, Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
     create(path, data, CreateMode.PERSISTENT);
   }
+  
+  /**
+   * Create a persistent node.
+   *
+   * @param path
+   * @param acl
+   * @param data
+   * @throws ZkInterruptedException   if operation was interrupted, or a required reconnection got interrupted
+   * @throws IllegalArgumentException if called from anything except the ZooKeeper event thread
+   * @throws ZkException              if any ZooKeeper exception occurred
+   * @throws RuntimeException         if any other exception occurs
+   */
+  public void createPersistent(String path, List<ACL> acl, Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+    create(path, data, acl, CreateMode.PERSISTENT);
+  }
+  
 
   /**
    * Create a persistent, sequental node.
@@ -263,19 +281,54 @@ public class ZkClient implements Watcher {
    * @throws RuntimeException         if any other exception occurs
    */
   public String create(final String path, Object data, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-    if (path == null) {
+   
+	if (path == null) {
       throw new NullPointerException("path must not be null.");
     }
+	return create( path, data, Ids.OPEN_ACL_UNSAFE, mode);
+  }
+  
+  
+  
+  /**
+   * Create a node.
+   *
+   * @param path
+   * @param data
+   * @param acl
+   * @param mode
+   * @return create node's path
+   * @throws ZkInterruptedException   if operation was interrupted, or a required reconnection got interrupted
+   * @throws IllegalArgumentException if called from anything except the ZooKeeper event thread
+   * @throws ZkException              if any ZooKeeper exception occurred
+   * @throws RuntimeException         if any other exception occurs
+   */
+  public String create(final String path, Object data, final List<ACL> acl, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+    
+	if (path == null) {
+      throw new NullPointerException("path must not be null.");
+    }
+	if( null == acl ){
+		throw new NullPointerException("acl must not be null.");
+	}
+    
     final byte[] bytes = data == null ? null : serialize(data);
 
     return retryUntilConnected(new Callable<String>() {
 
       @Override
       public String call() throws Exception {
-        return _connection.create(path, bytes, mode);
+        return _connection.create( path, bytes, acl, mode );
       }
     });
   }
+  
+  
+  
+  
+  
+  
+  
 
   /**
    * Create a node in async matter
@@ -818,6 +871,18 @@ public class ZkClient implements Watcher {
       }
     });
   }
+  
+  public void addAuthInfo( final String scheme, final byte[] auth ) {
+	  
+	  retryUntilConnected(new Callable<Object>() {
+      @Override
+      public Object call() throws Exception {
+        _connection.addAuthInfo( scheme, auth );
+        return null;
+      }
+    });
+  }
+  
 
   public void watchForData(final String path) {
     retryUntilConnected(new Callable<Object>() {

@@ -22,6 +22,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 public interface IZkConnection {
@@ -30,12 +31,14 @@ public interface IZkConnection {
 
     void close() throws InterruptedException;
 
-    public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException;
-
     public void delete(String path) throws InterruptedException, KeeperException;
 
-    public void create(String path, byte[] data, CreateMode mode, AsyncCallback.StringCallback callback, Object context) throws KeeperException, InterruptedException;
+    public String create(String path, byte[] data, List<ACL> acl, CreateMode mode) throws KeeperException, InterruptedException;
 
+    public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException;
+    
+    public void create(String path, byte[] data, CreateMode mode, AsyncCallback.StringCallback callback, Object context) throws KeeperException, InterruptedException;
+    
     public void delete(String path, AsyncCallback.VoidCallback callback, Object context) throws InterruptedException, KeeperException;
 
     boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException;
@@ -53,4 +56,6 @@ public interface IZkConnection {
     public long getCreateTime(String path) throws KeeperException, InterruptedException;
 
     public String getServers();
+    
+    public void addAuthInfo(String scheme, byte[] auth);
 }
