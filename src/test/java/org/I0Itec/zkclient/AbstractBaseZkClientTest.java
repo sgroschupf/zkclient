@@ -50,12 +50,12 @@ public abstract class AbstractBaseZkClientTest {
         LOG.info("------------ AFTER -------------");
     }
 
-    @Test(expected = ZkTimeoutException.class, timeout = 5000)
+    @Test(expected = ZkTimeoutException.class, timeout = 15000)
     public void testUnableToConnect() throws Exception {
         LOG.info("--- testUnableToConnect");
         // we are using port 4711 to avoid conflicts with the zk server that is
         // started by the Spring context
-        new ZkClient("localhost:4712", 1000);
+        new ZkClient("localhost:4712", 5000);
     }
 
     @Test

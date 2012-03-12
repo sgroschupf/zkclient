@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ServerZkClientTest extends AbstractBaseZkClientTest {
+	private static final int CONNECTION_TIMEOUT = 15000;
     private AtomicInteger _counter = new AtomicInteger();
 
     @Override
@@ -43,7 +44,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
     public void setUp() throws Exception {
         super.setUp();
         _zkServer = TestUtil.startZkServer("ZkClientTest_" + _counter.addAndGet(1), 4711);
-        _client = new ZkClient("localhost:4711", 5000);
+        _client = new ZkClient("localhost:4711", CONNECTION_TIMEOUT);
     }
 
     @Override
@@ -54,13 +55,13 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         _zkServer.shutdown();
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 60000)
     public void testRetryUntilConnected() throws Exception {
         LOG.info("--- testRetryUntilConnected");
         Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
         final ZkConnection zkConnection = new ZkConnection("localhost:4712");
-        final ZkClient zkClient = new ZkClient(zkConnection, 1000);
+        final ZkClient zkClient = new ZkClient(zkConnection, CONNECTION_TIMEOUT);
 
         gateway.stop();
 
@@ -82,10 +83,10 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         gateway.stop();
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 60000)
     public void testWaitUntilConnected() throws Exception {
         LOG.info("--- testWaitUntilConnected");
-        ZkClient _client = new ZkClient("localhost:4711", 5000);
+        ZkClient _client = new ZkClient("localhost:4711", CONNECTION_TIMEOUT);
 
         _zkServer.shutdown();
 
@@ -96,7 +97,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         assertFalse(_client.waitUntilConnected(100, TimeUnit.MILLISECONDS));
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 60000)
     public void testRetryUntilConnected_SessionExpiredException() {
         LOG.info("--- testRetryUntilConnected_SessionExpiredException");
 
@@ -106,7 +107,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         gateway.start();
 
         // Use a session timeout of 200ms
-        final ZkClient zkClient = new ZkClient("localhost:4712", 200, 5000);
+        final ZkClient zkClient = new ZkClient("localhost:4712", 200, CONNECTION_TIMEOUT);
 
         gateway.stop();
 
@@ -129,7 +130,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         gateway.stop();
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 60000)
     public void testChildListenerAfterSessionExpiredException() throws Exception {
         LOG.info("--- testChildListenerAfterSessionExpiredException");
 
@@ -140,7 +141,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
 
-        final ZkClient disconnectedZkClient = new ZkClient("localhost:4712", sessionTimeout, 5000);
+        final ZkClient disconnectedZkClient = new ZkClient("localhost:4712", sessionTimeout, CONNECTION_TIMEOUT);
         final Holder<List<String>> children = new Holder<List<String>>();
         disconnectedZkClient.subscribeChildChanges("/root", new IZkChildListener() {
 
@@ -179,7 +180,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         final Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
 
-        ZkClient zkClient = new ZkClient("localhost:4712", 5000);
+        ZkClient zkClient = new ZkClient("localhost:4712", CONNECTION_TIMEOUT);
         zkClient.close();
 
         gateway.stop();

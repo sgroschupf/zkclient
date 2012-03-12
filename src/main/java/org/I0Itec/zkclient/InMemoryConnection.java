@@ -34,12 +34,18 @@ import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.Op;
+import org.apache.zookeeper.OpResult;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.proto.CheckVersionRequest;
+import org.apache.zookeeper.proto.CreateRequest;
+import org.apache.zookeeper.proto.DeleteRequest;
+import org.apache.zookeeper.proto.SetDataRequest;
 
 public class InMemoryConnection implements IZkConnection {
 
@@ -282,5 +288,29 @@ public class InMemoryConnection implements IZkConnection {
     @Override
     public String getServers() {
         return "mem";
+    }
+
+    public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
+        List<OpResult> opResults = new ArrayList<OpResult>();
+        for (Op op : ops) {
+            if (Op.Check.class.isAssignableFrom(op.getClass())) {
+                CheckVersionRequest check = (CheckVersionRequest) op.toRequestRecord();
+                exists(check.getPath(), false);
+                opResults.add(new OpResult.CheckResult());
+            } else if (Op.Create.class.isAssignableFrom(op.getClass())) {
+                CreateRequest create = (CreateRequest) op.toRequestRecord();
+                String path = create(create.getPath(), create.getData(), CreateMode.fromFlag(create.getFlags()));
+                opResults.add(new OpResult.CreateResult(path));
+            } else if (Op.Delete.class.isAssignableFrom(op.getClass())) {
+                DeleteRequest delete = (DeleteRequest) op.toRequestRecord();
+                delete(delete.getPath());
+                opResults.add(new OpResult.DeleteResult());
+            } else if (Op.SetData.class.isAssignableFrom(op.getClass())) {
+                SetDataRequest setData = (SetDataRequest) op.toRequestRecord();
+                writeData(setData.getPath(), setData.getData(), setData.getVersion());
+                opResults.add(new OpResult.SetDataResult(null));
+            }
+        }
+        return opResults;
     }
 }

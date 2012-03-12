@@ -7,7 +7,7 @@
     <groupId>zkclient</groupId>
     <artifactId>zkclient</artifactId>
     <name>zkclient</name>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2.1.dev</version>
     <packaging>jar</packaging>
     <description />
 
@@ -17,9 +17,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.hadoop.zookeeper</groupId>
+            <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>3.2.1</version>
+            <version>3.4.3</version>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.5</version>
+            <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
