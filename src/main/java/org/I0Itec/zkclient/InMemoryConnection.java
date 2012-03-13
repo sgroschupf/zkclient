@@ -36,6 +36,7 @@ import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 public class InMemoryConnection implements IZkConnection {
@@ -141,6 +142,13 @@ public class InMemoryConnection implements IZkConnection {
         }
     }
 
+
+	@Override
+	public String create( String path, byte[] data, List< ACL > acl, CreateMode mode ) throws KeeperException, InterruptedException {
+		throw new RuntimeException( "InMemoryConnection not support the acl control at present." );
+	}
+    
+    
     private String getParentPath(String path) {
         int lastIndexOf = path.lastIndexOf("/");
         if (lastIndexOf == -1 || lastIndexOf == 0) {
@@ -295,4 +303,10 @@ public class InMemoryConnection implements IZkConnection {
     public void getChildren(String path, boolean watch, AsyncCallback.ChildrenCallback callback, Object context) throws KeeperException, InterruptedException {
         throw new KeeperException.UnimplementedException();
     }
+
+	@Override
+	public void addAuthInfo( String scheme, byte[] auth ) {
+		throw new RuntimeException( "InMemoryConnection not support the auth control at present." );
+	}
+
 }
