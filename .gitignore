@@ -11,3 +11,6 @@ junit*
 *.iml
 gradle*
 *gradle
+.idea/*
+target/*
+ivy.xml
