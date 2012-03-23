@@ -20,7 +20,6 @@ import org.I0Itec.zkclient.exception.*;
 import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.I0Itec.zkclient.util.ZkPathUtil;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
@@ -30,6 +29,8 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,13 +47,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Abstracts the interaction with zookeeper and allows permanent (not just one time) watches on nodes in ZooKeeper
  */
+@SuppressWarnings("unchecked")
 public class ZkClient implements Watcher {
 
-  private final static Logger LOG = Logger.getLogger(ZkClient.class);
+  private final static Logger log = LoggerFactory.getLogger(ZkClient.class);
 
   protected IZkConnection _connection;
   private final Map<String, Set<IZkChildListener>> _childListener = new ConcurrentHashMap<String, Set<IZkChildListener>>();
-  private final ConcurrentHashMap<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
+  private final Map<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
   private final Set<IZkStateListener> _stateListener = new CopyOnWriteArraySet<IZkStateListener>();
   private KeeperState _currentState;
   private final ZkLock _zkEventLock = new ZkLock();
@@ -128,7 +130,7 @@ public class ZkClient implements Watcher {
       listeners.add(listener);
     }
     watchForData(path);
-    LOG.debug("Subscribed data changes for " + path);
+    log.debug("Subscribed data changes for {}", path);
   }
 
   public void unsubscribeDataChanges(String path, IZkDataListener dataListener) {
@@ -223,7 +225,7 @@ public class ZkClient implements Watcher {
   public void createPersistent(String path, Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
     create(path, data, CreateMode.PERSISTENT);
   }
-  
+
   /**
    * Create a persistent node.
    *
@@ -238,7 +240,7 @@ public class ZkClient implements Watcher {
   public void createPersistent(String path, List<ACL> acl, Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
     create(path, data, acl, CreateMode.PERSISTENT);
   }
-  
+
 
   /**
    * Create a persistent, sequental node.
@@ -281,15 +283,14 @@ public class ZkClient implements Watcher {
    * @throws RuntimeException         if any other exception occurs
    */
   public String create(final String path, Object data, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-   
-	if (path == null) {
+
+    if (path == null) {
       throw new NullPointerException("path must not be null.");
     }
-	return create( path, data, Ids.OPEN_ACL_UNSAFE, mode);
+    return create(path, data, Ids.OPEN_ACL_UNSAFE, mode);
   }
-  
-  
-  
+
+
   /**
    * Create a node.
    *
@@ -304,40 +305,34 @@ public class ZkClient implements Watcher {
    * @throws RuntimeException         if any other exception occurs
    */
   public String create(final String path, Object data, final List<ACL> acl, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-    
-	if (path == null) {
+
+    if (path == null) {
       throw new NullPointerException("path must not be null.");
     }
-	if( null == acl ){
-		throw new NullPointerException("acl must not be null.");
-	}
-    
+    if (null == acl) {
+      throw new NullPointerException("acl must not be null.");
+    }
+
     final byte[] bytes = data == null ? null : serialize(data);
 
     return retryUntilConnected(new Callable<String>() {
 
       @Override
       public String call() throws Exception {
-        return _connection.create( path, bytes, acl, mode );
+        return _connection.create(path, bytes, acl, mode);
       }
     });
   }
-  
-  
-  
-  
-  
-  
-  
+
 
   /**
    * Create a node in async matter
    *
-   * @param path Path to create
-   * @param data Data to write
-   * @param mode Mode to create in
+   * @param path     Path to create
+   * @param data     Data to write
+   * @param mode     Mode to create in
    * @param callback Callback to call once operation is done
-   * @param context Context to pass to callback
+   * @param context  Context to pass to callback
    * @throws ZkInterruptedException   if operation was interrupted, or a required reconnection got interrupted
    * @throws IllegalArgumentException if called from anything except the ZooKeeper event thread
    * @throws ZkException              if any ZooKeeper exception occurred
@@ -389,7 +384,7 @@ public class ZkClient implements Watcher {
   }
 
   public void process(WatchedEvent event) {
-    LOG.debug("Received event: " + event);
+    log.debug("Received event: {}", event);
     _zookeeperEventThread = Thread.currentThread();
 
     boolean stateChanged = event.getPath() == null;
@@ -402,7 +397,7 @@ public class ZkClient implements Watcher {
 
       // We might have to install child change event listener if a new node was created
       if (getShutdownTrigger()) {
-        LOG.debug("ignoring event '{" + event.getType() + " | " + event.getPath() + "}' since shutdown triggered");
+        log.debug("ignoring event '{}|{}' since shutdown triggered", event.getType(), event.getPath());
         return;
       }
       if (stateChanged) {
@@ -433,7 +428,7 @@ public class ZkClient implements Watcher {
         getEventLock().getDataChangedCondition().signalAll();
       }
       getEventLock().unlock();
-      LOG.debug("Leaving process event");
+      log.debug("Leaving process event");
     }
   }
 
@@ -487,7 +482,7 @@ public class ZkClient implements Watcher {
   }
 
   private void processStateChanged(WatchedEvent event) {
-    LOG.info("zookeeper state changed (" + event.getState() + ")");
+    log.info("zookeeper state changed ( {} )", event.getState());
     setCurrentState(event.getState());
     if (getShutdownTrigger()) {
       return;
@@ -614,13 +609,13 @@ public class ZkClient implements Watcher {
         });
       }
     } catch (Exception e) {
-      LOG.error("Failed to fire child changed event. Unable to getChildren.  ", e);
+      log.error("Failed to fire child changed event. Unable to getChildren.  ", e);
     }
   }
 
   public boolean waitUntilExists(String path, TimeUnit timeUnit, long time) throws ZkInterruptedException {
     Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
-    LOG.debug("Waiting until znode '" + path + "' becomes available.");
+    log.debug("Waiting until znode '" + path + "' becomes available.");
     if (exists(path)) {
       return true;
     }
@@ -666,7 +661,7 @@ public class ZkClient implements Watcher {
     }
     Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
 
-    LOG.debug("Waiting for keeper state " + keeperState);
+    log.debug("Waiting for keeper state " + keeperState);
     acquireEventLock();
     try {
       boolean stillWaiting = true;
@@ -676,7 +671,7 @@ public class ZkClient implements Watcher {
         }
         stillWaiting = getEventLock().getStateChangedCondition().awaitUntil(timeout);
       }
-      LOG.debug("State is " + _currentState);
+      log.debug("State is " + _currentState);
       return true;
     } catch (InterruptedException e) {
       throw new ZkInterruptedException(e);
@@ -766,9 +761,10 @@ public class ZkClient implements Watcher {
 
   /**
    * Deletes a node in async manner.
-   * @param path Path to delte
+   *
+   * @param path     Path to delte
    * @param callback Callback to call when deletion is done
-   * @param context Context to pass to deletion callback
+   * @param context  Context to pass to deletion callback
    */
   public void delete(final String path, final AsyncCallback.VoidCallback callback, final Object context) {
     try {
@@ -871,18 +867,18 @@ public class ZkClient implements Watcher {
       }
     });
   }
-  
-  public void addAuthInfo( final String scheme, final byte[] auth ) {
-	  
-	  retryUntilConnected(new Callable<Object>() {
+
+  public void addAuthInfo(final String scheme, final byte[] auth) {
+
+    retryUntilConnected(new Callable<Object>() {
       @Override
       public Object call() throws Exception {
-        _connection.addAuthInfo( scheme, auth );
+        _connection.addAuthInfo(scheme, auth);
         return null;
       }
     });
   }
-  
+
 
   public void watchForData(final String path) {
     retryUntilConnected(new Callable<Object>() {
@@ -936,7 +932,7 @@ public class ZkClient implements Watcher {
       _eventThread.start();
       _connection.connect(watcher);
 
-      LOG.debug("Awaiting connection to Zookeeper server");
+      log.debug("Awaiting connection to Zookeeper server");
       if (!waitUntilConnected(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS)) {
         throw new ZkTimeoutException("Unable to connect to zookeeper server within timeout: " + maxMsToWaitUntilConnected);
       }
@@ -977,7 +973,7 @@ public class ZkClient implements Watcher {
     if (_connection == null) {
       return;
     }
-    LOG.debug("Closing ZkClient...");
+    log.debug("Closing ZkClient...");
     getEventLock().lock();
     try {
       setShutdownTrigger(true);
@@ -990,7 +986,7 @@ public class ZkClient implements Watcher {
     } finally {
       getEventLock().unlock();
     }
-    LOG.debug("Closing ZkClient...done");
+    log.debug("Closing ZkClient...done");
   }
 
   private void reconnect() {
@@ -1024,5 +1020,19 @@ public class ZkClient implements Watcher {
     listeners += _stateListener.size();
 
     return listeners;
+  }
+
+  public List<OpResult> multi(final Iterable<Op> ops) throws ZkException {
+    if (ops == null) {
+      throw new NullPointerException("ops must not be null.");
+    }
+
+    return retryUntilConnected(new Callable<List<OpResult>>() {
+
+      @Override
+      public List<OpResult> call() throws Exception {
+        return _connection.multi(ops);
+      }
+    });
   }
 }
