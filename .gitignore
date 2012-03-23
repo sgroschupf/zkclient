@@ -14,3 +14,4 @@ gradle*
 .idea/*
 target/*
 ivy.xml
+private/*
