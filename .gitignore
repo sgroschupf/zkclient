@@ -5,3 +5,13 @@
 build-eclipse
 build
 junit*
+.gradle
+*.iws
+*.ipr
+*.iml
+gradle*
+*gradle
+.idea/*
+target/*
+ivy.xml
+private/*

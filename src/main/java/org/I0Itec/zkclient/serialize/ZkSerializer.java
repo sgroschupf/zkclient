@@ -25,8 +25,6 @@ import org.I0Itec.zkclient.exception.ZkMarshallingError;
  * @see SerializableSerializer
  */
 public interface ZkSerializer {
-
     public byte[] serialize(Object data) throws ZkMarshallingError;
-
     public Object deserialize(byte[] bytes) throws ZkMarshallingError;
 }
