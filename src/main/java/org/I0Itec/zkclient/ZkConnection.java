@@ -103,12 +103,12 @@ public class ZkConnection implements IZkConnection {
         return _zk.getData(path, watch, stat);
     }
 
-    public void writeData(String path, byte[] data) throws KeeperException, InterruptedException {
-        writeData(path, data, -1);
+    public Stat writeData(String path, byte[] data) throws KeeperException, InterruptedException {
+        return writeData(path, data, -1);
     }
 
-    public void writeData(String path, byte[] data, int version) throws KeeperException, InterruptedException {
-        _zk.setData(path, data, version);
+    public Stat writeData(String path, byte[] data, int version) throws KeeperException, InterruptedException {
+        return _zk.setData(path, data, version);
     }
 
     public States getZookeeperState() {

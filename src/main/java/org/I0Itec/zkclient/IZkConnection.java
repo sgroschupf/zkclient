@@ -39,7 +39,7 @@ public interface IZkConnection {
 
     public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException;
 
-    public void writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException;
+    public Stat writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException;
 
     public States getZookeeperState();
 

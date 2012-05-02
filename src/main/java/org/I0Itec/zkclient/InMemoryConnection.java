@@ -43,8 +43,23 @@ import org.apache.zookeeper.data.Stat;
 
 public class InMemoryConnection implements IZkConnection {
 
+	public static class DataAndVersion {
+		private byte[] _data;
+		private int _version;
+		public DataAndVersion(byte[] data, int version) {
+			_data = data;
+			_version = version;
+		}
+		public byte[] getData() {
+			return _data;
+		}
+		public int getVersion() {
+			return _version;
+		}
+	}
+	
     private Lock _lock = new ReentrantLock(true);
-    private Map<String, byte[]> _data = new HashMap<String, byte[]>();
+    private Map<String, DataAndVersion> _data = new HashMap<String, DataAndVersion>();
     private Map<String, Long> _creationTime = new HashMap<String, Long>();
     private final AtomicInteger sequence = new AtomicInteger(0);
 
@@ -130,7 +145,7 @@ public class InMemoryConnection implements IZkConnection {
             if (exists(path, false)) {
                 throw new KeeperException.NodeExistsException();
             }
-            _data.put(path, data);
+            _data.put(path, new DataAndVersion(data, 0));
             _creationTime.put(path, System.currentTimeMillis());
             checkWatch(_nodeWatches, path, EventType.NodeCreated);
             // we also need to send a child change event for the parent
@@ -235,10 +250,13 @@ public class InMemoryConnection implements IZkConnection {
         }
         _lock.lock();
         try {
-            byte[] bs = _data.get(path);
-            if (bs == null) {
+        	DataAndVersion dataAndVersion = _data.get(path);
+            if (dataAndVersion == null) {
                 throw new ZkNoNodeException(new KeeperException.NoNodeException());
             }
+            byte[] bs = dataAndVersion.getData();
+            if (stat != null)
+            	stat.setVersion(dataAndVersion.getVersion());
             return bs;
         } finally {
             _lock.unlock();
@@ -246,14 +264,16 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public void writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
-        _lock.lock();
+    public Stat writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
+    	int newVersion=-1;
+    	_lock.lock();
         try {
             checkWatch(_dataWatches, path, EventType.NodeDataChanged);
             if (!exists(path, false)) {
                 throw new KeeperException.NoNodeException();
             }
-            _data.put(path, data);
+            newVersion = _data.get(path).getVersion() + 1;
+            _data.put(path, new DataAndVersion(data, newVersion));
             String parentPath = getParentPath(path);
             if (parentPath != null) {
                 checkWatch(_nodeWatches, parentPath, EventType.NodeChildrenChanged);
@@ -261,6 +281,9 @@ public class InMemoryConnection implements IZkConnection {
         } finally {
             _lock.unlock();
         }
+        Stat stat = new Stat();
+        stat.setVersion(newVersion);
+        return stat;
     }
 
     private void checkWatch(Set<String> watches, String path, EventType eventType) {
