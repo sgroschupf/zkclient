@@ -24,6 +24,8 @@ import org.I0Itec.zkclient.exception.ZkException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Op;
+import org.apache.zookeeper.OpResult;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -131,5 +133,9 @@ public class ZkConnection implements IZkConnection {
     @Override
     public String getServers() {
         return _servers;
+    }
+
+    public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
+        return _zk.multi(ops);
     }
 }
