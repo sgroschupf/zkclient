@@ -1,7 +1,7 @@
 <ivysettings>
     <settings defaultResolver="local-resolver-chain" />
     <caches defaultCacheDir="${ivy.cache}" />
-
+	<credentials host="192.168.0.20" realm="Artifactory Realm" username="deployer" passwd="mvdeployersecret"/>
     <resolvers>
         <chain name="local-resolver-chain" dual="true">
             <filesystem name="libraries">
@@ -9,12 +9,19 @@
                 <ivy pattern="${basedir}/lib/[artifact]-[revision].xml" />
             </filesystem>
 
-            <ibiblio name="ibiblio" m2compatible="true" />
+            <!--<ibiblio name="ibiblio" m2compatible="true" />-->
+            <ibiblio name="artifactory" m2compatible="true" root="http://192.168.0.20:8081/artifactory/libs-release"/>
 
             <filesystem checkmodified="true" name="install">
                 <artifact pattern="${basedir}/${build.dir}/install/[artifact]-[revision].[ext]" />
                 <ivy pattern="${basedir}/${build.dir}/install/[module]-[revision].xml" />
             </filesystem>
+            
+            <url name="artifactory-publish">
+        <!-- You can use  m2compatible="true" instead of specifying your own pattern -->
+        		<artifact pattern="http://192.168.0.20:8081/artifactory/libs-snapshot-local/[organization]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+        		<ivy pattern="http://192.168.0.20:8081/artifactory/libs-snapshot-local/[organization]/[module]/[revision]/ivy-[revision].xml" />
+    		</url>
         </chain>
     </resolvers>
 </ivysettings>
