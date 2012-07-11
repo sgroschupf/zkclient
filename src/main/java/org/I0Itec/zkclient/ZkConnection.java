@@ -154,4 +154,12 @@ public class ZkConnection implements IZkConnection {
 	public void addAuthInfo( String scheme, byte[] auth ) {
 		_zk.addAuthInfo( scheme, auth );
 	}
+
+	@Override
+	public States getState() {
+		if( null == _zk ){
+			return States.CLOSED;
+		}
+		return _zk.getState();
+	}
 }

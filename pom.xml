@@ -6,7 +6,7 @@
 	<groupId>com.taobao.taokeeper</groupId>
 	<artifactId>zkclient</artifactId>
 	<name>zkclient</name>
-	<version>0.2-SNAPSHOT</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>

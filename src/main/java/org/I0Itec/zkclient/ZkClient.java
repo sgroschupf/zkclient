@@ -1025,4 +1025,16 @@ public class ZkClient implements Watcher {
 
     return listeners;
   }
+  
+  /**
+   * Support the interface for user to get the state of zookeeper.<br>
+   * See more: https://github.com/sgroschupf/zkclient/issues/20<br>
+   * @return if null != zookeeper,return zookeeper.getState() <br>
+   *       else return States.CLOSED
+   * */
+  public States getState() {
+	  return _connection.getState();
+  }
+  
+  
 }

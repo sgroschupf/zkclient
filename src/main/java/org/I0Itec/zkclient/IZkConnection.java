@@ -58,4 +58,12 @@ public interface IZkConnection {
     public String getServers();
     
     public void addAuthInfo(String scheme, byte[] auth);
+    
+    /**
+     * Support the interface for user to get the state of zookeeper.<br>
+     * See more: https://github.com/sgroschupf/zkclient/issues/20<br>
+     * @return if null != zookeeper,return zookeeper.getState() <br>
+     *       else return States.CLOSED
+     * */
+    public States getState();
 }

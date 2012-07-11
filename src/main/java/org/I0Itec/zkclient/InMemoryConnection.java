@@ -308,5 +308,10 @@ public class InMemoryConnection implements IZkConnection {
 	public void addAuthInfo( String scheme, byte[] auth ) {
 		throw new RuntimeException( "InMemoryConnection not support the auth control at present." );
 	}
+	
+	@Override
+	public States getState() {
+		throw new RuntimeException( "InMemoryConnection not support the get state of zookeeper" );
+	}
 
 }
