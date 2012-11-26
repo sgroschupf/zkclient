@@ -1,0 +1,96 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+
+group = 'com.101tec'
+version = '0.2'
+sourceCompatibility = 1.6
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'ZkClient', 'Implementation-Version': version
+    }
+}
+
+
+//--------------------
+// Dependencies
+//--------------------
+repositories {
+    flatDir(dirs: 'lib')
+	// mavenCentral()
+}
+dependencies {
+	compile 'org.apache.zookeeper:zookeeper:3.3.1'
+	compile 'log4j:log4j:1.2.14'
+	testCompile 'junit:junit:4.7'
+	testCompile 'commons-io:commons-io:1.4'
+	testCompile 'org.mockito:mockito-core:1.8.0'
+	
+	//dependencies of mockito
+	testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
+}
+
+
+//--------------------
+// Source Jar
+//--------------------
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+task javadocJar(type: Jar, dependsOn:javadoc) {      
+	classifier = 'javadoc'     
+	from javadoc.destinationDir 
+}   
+artifacts {
+	archives sourceJar      
+    archives javadocJar
+}
+task jars(dependsOn: ['jar','sourceJar'], description: 'Build jar & source jar') << {}
+
+
+//--------------------
+// Eclipse Setup
+//--------------------
+eclipseClasspath { defaultOutputDir = new File(project.getProjectDir().getAbsolutePath() + "/build-eclipse"); }
+task eclipseJdtPrepare(type: Copy) {
+	from rootProject.file('src/build/eclipse/org.eclipse.jdt.core.prefs')
+	into project.file('.settings/')
+}
+tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare)
+
+
+//--------------------
+// Maven Artifact publishing
+//--------------------
+
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: "file:///tmp/mavenRepo")
+        pom.project {
+        	name 'ZkClient'
+        	description 'A zookeeper client, that makes life a little easier.'
+        	url 'https://github.com/sgroschupf/zkclient'
+        	licenses {
+            	license {
+                	name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            scm {
+            	url 'https://github.com/sgroschupf/zkclient'
+            	connection 'https://github.com/sgroschupf/zkclient.git'
+            }
+        }
+    }
+}
+
+
+//--------------------
+// Util methods
+//--------------------
+task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') {
+    gradleVersion = '1.3'
+}
