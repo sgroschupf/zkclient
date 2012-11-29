@@ -1,6 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'project-reports'
 
 group = 'com.101tec'
 version = '0.2'
@@ -19,10 +21,22 @@ jar {
 repositories {
     flatDir(dirs: 'lib')
 	// mavenCentral()
+	// maven {
+    //     url "https://oss.sonatype.org/content/repositories/com101tec-553"
+    //}
 }
 dependencies {
-	compile 'org.apache.zookeeper:zookeeper:3.3.1'
-	compile 'log4j:log4j:1.2.14'
+	//compile 'com.101tec:zkclient:0.2'
+	compile ('log4j:log4j:1.2.14') {
+		exclude group: "com.sun.jdmk", module: "jmxtools"
+        exclude group: "com.sun.jmx", module: "jmxri"
+        exclude group: "javax.jms", module: "jms"
+	}
+	compile ('org.apache.zookeeper:zookeeper:3.3.1') {
+		exclude group: "com.sun.jdmk", module: "jmxtools"
+        exclude group: "com.sun.jmx", module: "jmxri"
+        exclude group: "javax.jms", module: "jms"
+	}
 	testCompile 'junit:junit:4.7'
 	testCompile 'commons-io:commons-io:1.4'
 	testCompile 'org.mockito:mockito-core:1.8.0'
@@ -53,7 +67,12 @@ task jars(dependsOn: ['jar','sourceJar'], description: 'Build jar & source jar')
 //--------------------
 // Eclipse Setup
 //--------------------
-eclipseClasspath { defaultOutputDir = new File(project.getProjectDir().getAbsolutePath() + "/build-eclipse"); }
+eclipse {
+    classpath {
+    	defaultOutputDir = file('build-eclipse')
+    }
+}
+
 task eclipseJdtPrepare(type: Copy) {
 	from rootProject.file('src/build/eclipse/org.eclipse.jdt.core.prefs')
 	into project.file('.settings/')
@@ -65,11 +84,23 @@ tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare)
 // Maven Artifact publishing
 //--------------------
 
+signing {
+    required { gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+
 uploadArchives {
+
     repositories.mavenDeployer {
-        repository(url: "file:///tmp/mavenRepo")
+        //repository(url: "file:///tmp/mavenRepo")
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        	authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
         pom.project {
         	name 'ZkClient'
+        	packaging 'jar'
         	description 'A zookeeper client, that makes life a little easier.'
         	url 'https://github.com/sgroschupf/zkclient'
         	licenses {
@@ -81,7 +112,22 @@ uploadArchives {
             }
             scm {
             	url 'https://github.com/sgroschupf/zkclient'
-            	connection 'https://github.com/sgroschupf/zkclient.git'
+            	connection 'scm:git:git://github.com/sgroschupf/zkclient.git'
+            	developerConnection 'scm:git:https://github.com/sgroschupf/zkclient.git'
+            }
+            developers {
+            	developer {
+            		id 'sgroschupf'
+            		name 'Stefan Groshupf'
+            	}
+            	developer {
+            		id 'pvoss'
+            		name 'Peter Voss'
+            	}
+            	developer {
+            		id 'jzillmann'
+            		name 'Johannes Zillmann'
+            	}
             }
         }
     }
@@ -94,3 +140,4 @@ uploadArchives {
 task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') {
     gradleVersion = '1.3'
 }
+
