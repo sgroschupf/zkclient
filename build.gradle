@@ -5,7 +5,7 @@ apply plugin: 'signing'
 apply plugin: 'project-reports'
 
 group = 'com.101tec'
-version = '0.2'
+version = '0.3-dev'
 sourceCompatibility = 1.6
 
 jar {
