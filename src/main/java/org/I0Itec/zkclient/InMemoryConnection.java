@@ -264,7 +264,12 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public Stat writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
+    public void writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
+    	writeDataReturnStat(path, data, expectedVersion);
+    }
+
+    @Override
+    public Stat writeDataReturnStat(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
     	int newVersion=-1;
     	_lock.lock();
         try {
