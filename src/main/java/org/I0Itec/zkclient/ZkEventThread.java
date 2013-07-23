@@ -20,7 +20,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * All listeners registered at the {@link ZkClient} will be notified from this event thread. This is to prevent
@@ -32,7 +33,7 @@ import org.apache.log4j.Logger;
  */
 class ZkEventThread extends Thread {
 
-    private static final Logger LOG = Logger.getLogger(ZkEventThread.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZkEventThread.class);
 
     private BlockingQueue<ZkEvent> _events = new LinkedBlockingQueue<ZkEvent>();
 

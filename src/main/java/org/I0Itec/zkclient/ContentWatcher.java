@@ -20,7 +20,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @param <T>
@@ -28,7 +29,7 @@ import org.apache.log4j.Logger;
  */
 public final class ContentWatcher<T extends Object> implements IZkDataListener {
 
-    private static final Logger LOG = Logger.getLogger(ContentWatcher.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContentWatcher.class);
 
     private Lock _contentLock = new ReentrantLock(true);
     private Condition _contentAvailable = _contentLock.newCondition();
