@@ -451,15 +451,14 @@ public class ZkClient implements Watcher {
         if (getShutdownTrigger()) {
             return;
         }
-        try {
-            fireStateChangedEvent(event.getState());
-
-            if (event.getState() == KeeperState.Expired) {
+        fireStateChangedEvent(event.getState());
+        if (event.getState() == KeeperState.Expired) {
+            try {
                 reconnect();
                 fireNewSessionEvents();
+            } catch (final Exception e) {
+                fireSessionEstablishmentError(e);
             }
-        } catch (final Exception e) {
-            throw new RuntimeException("Exception while restarting zk client", e);
         }
     }
 
@@ -486,6 +485,21 @@ public class ZkClient implements Watcher {
             });
         }
     }
+
+    private void fireSessionEstablishmentError(final Throwable error) {
+        for (final IZkStateListener stateListener : _stateListener) {
+            _eventThread.send(new ZkEvent("Session establishment error(" 
+                                          + error
+                                          + ") sent to " + stateListener) {
+
+                @Override
+                public void run() throws Exception {
+                    stateListener.handleSessionEstablishmentError(error);
+                }
+            });
+        }
+    }
+
 
     private boolean hasListeners(String path) {
         Set<IZkDataListener> dataListeners = _dataListener.get(path);
