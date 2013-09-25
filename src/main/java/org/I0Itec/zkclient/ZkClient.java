@@ -457,6 +457,7 @@ public class ZkClient implements Watcher {
                 reconnect();
                 fireNewSessionEvents();
             } catch (final Exception e) {
+                LOG.info("Unable to re-establish connection. Notifying consumer of the following exception: ", e);
                 fireSessionEstablishmentError(e);
             }
         }
