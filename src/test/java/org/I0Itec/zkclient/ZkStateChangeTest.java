@@ -1,6 +1,5 @@
 package org.I0Itec.zkclient;
 
-import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -49,6 +48,14 @@ public class ZkStateChangeTest{
                         }
                     });
 
+        assertTimed(0,
+                    new Callable<Integer>(){
+                        @Override
+                        public Integer call() throws Exception{
+                            return listener.sessionEstablishErrors;
+                        }
+                    });
+
         assertTimed(1,
                     new Callable<Integer>(){
                         @Override
@@ -76,6 +83,15 @@ public class ZkStateChangeTest{
                             return listener.sessionEstablishErrors;
                         }
                     });
+
+        assertTimed(0,
+                    new Callable<Integer>(){
+                        @Override
+                        public Integer call() throws Exception{
+                            return listener.newSessionEvent;
+                        }
+                    });
+
 
         client.close();
     }
@@ -174,13 +190,11 @@ public class ZkStateChangeTest{
         @Override
         public void handleStateChanged(KeeperState state) throws Exception{
             if(state == KeeperState.Expired) {
-                System.out.println("HANDLING STATE CHAGED");
                 expiredEvents++;
             }
         }
         @Override
         public void handleNewSession() throws Exception{
-            System.out.println("HANDLING STATE CHAGED");
             newSessionEvent++;
         }
         @Override
