@@ -15,39 +15,34 @@
  */
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
-
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
-import org.I0Itec.zkclient.exception.ZkBadVersionException;
-import org.I0Itec.zkclient.exception.ZkException;
-import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.I0Itec.zkclient.exception.ZkNoNodeException;
-import org.I0Itec.zkclient.exception.ZkNodeExistsException;
-import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.I0Itec.zkclient.exception.*;
 import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Abstracts the interaction with zookeeper and allows permanent (not just one time) watches on nodes in ZooKeeper
@@ -452,14 +447,19 @@ public class ZkClient implements Watcher {
             return;
         }
         fireStateChangedEvent(event.getState());
-        if (event.getState() == KeeperState.Expired) {
-            try {
-                reconnect();
-                fireNewSessionEvents();
-            } catch (final Exception e) {
-                LOG.info("Unable to re-establish connection. Notifying consumer of the following exception: ", e);
-                fireSessionEstablishmentError(e);
-            }
+
+        if (event.getState() != KeeperState.SyncConnected) {
+            resetConnection();
+        }
+    }
+
+    private void resetConnection() {
+        try {
+            reconnect();
+            fireNewSessionEvents();
+        } catch (final Exception e) {
+            LOG.info("Unable to re-establish connection. Notifying consumer of the following exception: ", e);
+            fireSessionEstablishmentError(e);
         }
     }
 
@@ -691,11 +691,15 @@ public class ZkClient implements Watcher {
             } catch (ConnectionLossException e) {
                 // we give the event thread some time to update the status to 'Disconnected'
                 Thread.yield();
-                waitUntilConnected();
+                if (!waitUntilConnected(_connection.getSessionTimeout(), TimeUnit.MILLISECONDS)) {
+                    resetConnection();
+                }
             } catch (SessionExpiredException e) {
                 // we give the event thread some time to update the status to 'Expired'
                 Thread.yield();
-                waitUntilConnected();
+                if (!waitUntilConnected(_connection.getSessionTimeout(), TimeUnit.MILLISECONDS)) {
+                    resetConnection();
+                }
             } catch (KeeperException e) {
                 throw ZkException.create(e);
             } catch (InterruptedException e) {

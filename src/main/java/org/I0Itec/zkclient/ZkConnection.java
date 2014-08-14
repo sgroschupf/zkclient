@@ -15,20 +15,20 @@
  */
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.I0Itec.zkclient.exception.ZkException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ZkConnection implements IZkConnection {
 
@@ -42,6 +42,8 @@ public class ZkConnection implements IZkConnection {
 
     private final String _servers;
     private final int _sessionTimeOut;
+
+    private boolean connected = false;
 
     public ZkConnection(String zkServers) {
         this(zkServers, DEFAULT_SESSION_TIMEOUT);
@@ -62,6 +64,7 @@ public class ZkConnection implements IZkConnection {
             try {
                 LOG.debug("Creating new ZookKeeper instance to connect to " + _servers + ".");
                 _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
+                connected = true;
             } catch (IOException e) {
                 throw new ZkException("Unable to connect to " + _servers, e);
             }
@@ -77,6 +80,7 @@ public class ZkConnection implements IZkConnection {
                 LOG.debug("Closing ZooKeeper connected to " + _servers);
                 _zk.close();
                 _zk = null;
+                connected = false;
             }
         } finally {
             _zookeeperLock.unlock();
@@ -135,5 +139,10 @@ public class ZkConnection implements IZkConnection {
     @Override
     public String getServers() {
         return _servers;
+    }
+
+    @Override
+    public long getSessionTimeout() {
+        return _sessionTimeOut;
     }
 }

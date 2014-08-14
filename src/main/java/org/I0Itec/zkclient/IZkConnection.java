@@ -15,13 +15,13 @@
  */
 package org.I0Itec.zkclient;
 
-import java.util.List;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
+
+import java.util.List;
 
 public interface IZkConnection {
 
@@ -48,4 +48,6 @@ public interface IZkConnection {
     public long getCreateTime(String path) throws KeeperException, InterruptedException;
 
     public String getServers();
+
+    public long getSessionTimeout();
 }

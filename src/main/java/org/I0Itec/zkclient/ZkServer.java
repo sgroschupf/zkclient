@@ -15,20 +15,20 @@
  */
 package org.I0Itec.zkclient;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.NIOServerCnxn;
-import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.NIOServerCnxn.Factory;
+import org.apache.zookeeper.server.ZooKeeperServer;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
 
 public class ZkServer {
 
@@ -49,19 +49,21 @@ public class ZkServer {
     private int _port;
     private int _tickTime;
     private int _minSessionTimeout;
+    private String _ipaddr;
 
-    public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace) {
-        this(dataDir, logDir, defaultNameSpace, DEFAULT_PORT);
+    public ZkServer(String ipaddr, String dataDir, String logDir, IDefaultNameSpace defaultNameSpace) {
+        this(ipaddr, dataDir, logDir, defaultNameSpace, DEFAULT_PORT);
     }
 
-    public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port) {
-        this(dataDir, logDir, defaultNameSpace, port, DEFAULT_TICK_TIME);
+    public ZkServer(String ipaddr, String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port) {
+        this(ipaddr, dataDir, logDir, defaultNameSpace, port, DEFAULT_TICK_TIME);
     }
-   public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port, int tickTime) {
-      this(dataDir, logDir, defaultNameSpace, port, tickTime, DEFAULT_MIN_SESSION_TIMEOUT);
+   public ZkServer(String ipaddr, String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port, int tickTime) {
+      this(ipaddr, dataDir, logDir, defaultNameSpace, port, tickTime, DEFAULT_MIN_SESSION_TIMEOUT);
    }
 
-    public ZkServer(String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port, int tickTime, int minSessionTimeout) {
+    public ZkServer(String ipaddr, String dataDir, String logDir, IDefaultNameSpace defaultNameSpace, int port, int tickTime, int minSessionTimeout) {
+        _ipaddr = ipaddr;
         _dataDir = dataDir;
         _logDir = logDir;
         _defaultNameSpace = defaultNameSpace;
@@ -76,22 +78,13 @@ public class ZkServer {
 
     @PostConstruct
     public void start() {
-        final String[] localHostNames = NetworkUtil.getLocalHostNames();
-        String names = "";
-        for (int i = 0; i < localHostNames.length; i++) {
-            final String name = localHostNames[i];
-            names += " " + name;
-            if (i + 1 != localHostNames.length) {
-                names += ",";
-            }
-        }
-        LOG.info("Starting ZkServer on: [" + names + "] port " + _port + "...");
-        startZooKeeperServer();
-        _zkClient = new ZkClient("localhost:" + _port, 10000);
+        LOG.info("Starting ZkServer on: [" + _ipaddr + "] port " + _port + "...");
+        startZooKeeperServer(_ipaddr);
+        _zkClient = new ZkClient(_ipaddr + ":" + _port, 10000);
         _defaultNameSpace.createDefaultNameSpace(_zkClient);
     }
 
-    private void startZooKeeperServer() {
+    private void startZooKeeperServer(String ipaddr) {
         final String[] localhostHostNames = NetworkUtil.getLocalHostNames();
         final String servers = "localhost:" + _port;
         // check if this server needs to start a _client server.
@@ -121,18 +114,18 @@ public class ZkServer {
                 LOG.info("Start single zookeeper server...");
                 LOG.info("data dir: " + dataDir.getAbsolutePath());
                 LOG.info("data log dir: " + dataLogDir.getAbsolutePath());
-                startSingleZkServer(_tickTime, dataDir, dataLogDir, port);
+                startSingleZkServer(ipaddr, _tickTime, dataDir, dataLogDir, port);
             } else {
                 throw new IllegalStateException("Zookeeper port " + port + " was already in use. Running in single machine mode?");
             }
         }
     }
 
-    private void startSingleZkServer(final int tickTime, final File dataDir, final File dataLogDir, final int port) {
+    private void startSingleZkServer(String ipaddr, final int tickTime, final File dataDir, final File dataLogDir, final int port) {
         try {
             _zk = new ZooKeeperServer(dataDir, dataLogDir, tickTime);
            _zk.setMinSessionTimeout(_minSessionTimeout);
-            _nioFactory = new NIOServerCnxn.Factory(new InetSocketAddress(port));
+            _nioFactory = new NIOServerCnxn.Factory(new InetSocketAddress(InetAddress.getByName(ipaddr), port));
             _nioFactory.startup(_zk);
         } catch (IOException e) {
             throw new ZkException("Unable to start single ZooKeeper server.", e);
