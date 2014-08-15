@@ -448,7 +448,7 @@ public class ZkClient implements Watcher {
         }
         fireStateChangedEvent(event.getState());
 
-        if (event.getState() != KeeperState.SyncConnected) {
+        if (event.getState() == KeeperState.Expired) {
             resetConnection();
         }
     }

@@ -43,8 +43,6 @@ public class ZkConnection implements IZkConnection {
     private final String _servers;
     private final int _sessionTimeOut;
 
-    private boolean connected = false;
-
     public ZkConnection(String zkServers) {
         this(zkServers, DEFAULT_SESSION_TIMEOUT);
     }
@@ -64,7 +62,6 @@ public class ZkConnection implements IZkConnection {
             try {
                 LOG.debug("Creating new ZookKeeper instance to connect to " + _servers + ".");
                 _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
-                connected = true;
             } catch (IOException e) {
                 throw new ZkException("Unable to connect to " + _servers, e);
             }
@@ -80,7 +77,6 @@ public class ZkConnection implements IZkConnection {
                 LOG.debug("Closing ZooKeeper connected to " + _servers);
                 _zk.close();
                 _zk = null;
-                connected = false;
             }
         } finally {
             _zookeeperLock.unlock();

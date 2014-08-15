@@ -1,9 +1,21 @@
 package org.I0Itec.zkclient;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 
+/**
+ * To test this unit testing, the followings should be done first
+ * /etc/hosts contains 192.168.1.1 zkjbae
+ * 192.168.1.1 and 192.168.1.2 are binded on lo0 interface using
+ * sudo ifconfig lo0 192.168.1.2 alias
+ * sudo ifconfig lo0 192.168.1.2 alias
+ *
+ * Running the unit test after shutting down the first _zkServer,
+ * /etc/hosts should be fixed with 192.168.1.2 zkjbae to reroute DNS
+ */
+@Ignore
 public class TestRemoteZk {
 
     @Test

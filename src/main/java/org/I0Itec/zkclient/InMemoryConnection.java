@@ -309,6 +309,6 @@ public class InMemoryConnection implements IZkConnection {
 
     @Override
     public long getSessionTimeout() {
-        return 0;
+        return 30000;
     }
 }
