@@ -15,15 +15,15 @@
  */
 package org.I0Itec.zkclient;
 
-import static org.mockito.Mockito.mock;
+import org.apache.commons.io.FileUtils;
+import org.mockito.exceptions.base.MockitoAssertionError;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
-import org.mockito.exceptions.base.MockitoAssertionError;
+import static org.mockito.Mockito.mock;
 
 public class TestUtil {
 
@@ -97,7 +97,17 @@ public class TestUtil {
         String logPath = "./build/test/" + testName + "/log";
         FileUtils.deleteDirectory(new File(dataPath));
         FileUtils.deleteDirectory(new File(logPath));
-        ZkServer zkServer = new ZkServer(dataPath, logPath, mock(IDefaultNameSpace.class), port, ZkServer.DEFAULT_TICK_TIME, 100);
+        ZkServer zkServer = new ZkServer("127.0.0.1", dataPath, logPath, mock(IDefaultNameSpace.class), port, ZkServer.DEFAULT_TICK_TIME, 100);
+        zkServer.start();
+        return zkServer;
+    }
+
+    public static ZkServer startZkServerWithIP(String ipaddr, String testName, int port) throws IOException {
+        String dataPath = "./build/test/" + testName + "/data";
+        String logPath = "./build/test/" + testName + "/log";
+        FileUtils.deleteDirectory(new File(dataPath));
+        FileUtils.deleteDirectory(new File(logPath));
+        ZkServer zkServer = new ZkServer(ipaddr, dataPath, logPath, mock(IDefaultNameSpace.class), port, ZkServer.DEFAULT_TICK_TIME, 100);
         zkServer.start();
         return zkServer;
     }

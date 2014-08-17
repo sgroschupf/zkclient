@@ -15,18 +15,18 @@
  */
 package org.I0Itec.zkclient.testutil;
 
-import static org.mockito.Mockito.mock;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
 import org.I0Itec.zkclient.IDefaultNameSpace;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.ZkServer;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.rules.ExternalResource;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 public class ZkTestSystem extends ExternalResource {
 
@@ -46,7 +46,7 @@ public class ZkTestSystem extends ExternalResource {
         }
         String dataDir = baseDir + "/data";
         String logDir = baseDir + "/log";
-        _zkServer = new ZkServer(dataDir, logDir, mock(IDefaultNameSpace.class), PORT);
+        _zkServer = new ZkServer("127.0.0.1", dataDir, logDir, mock(IDefaultNameSpace.class), PORT);
         _zkServer.start();
         LOG.info("~~~~~~~~~~~~~~~ zk system started ~~~~~~~~~~~~~~~");
     }

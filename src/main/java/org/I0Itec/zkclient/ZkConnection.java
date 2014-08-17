@@ -15,20 +15,20 @@
  */
 package org.I0Itec.zkclient;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.I0Itec.zkclient.exception.ZkException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ZkConnection implements IZkConnection {
 
@@ -135,5 +135,10 @@ public class ZkConnection implements IZkConnection {
     @Override
     public String getServers() {
         return _servers;
+    }
+
+    @Override
+    public long getSessionTimeout() {
+        return _sessionTimeOut;
     }
 }
