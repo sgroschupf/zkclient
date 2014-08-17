@@ -22,29 +22,29 @@ jar {
 //--------------------
 repositories {
     flatDir(dirs: 'lib')
-  // mavenCentral()
-  // maven {
+	// mavenCentral()
+	// maven {
     //     url "https://oss.sonatype.org/content/repositories/com101tec-553"
     //}
 }
 dependencies {
-  //compile 'com.101tec:zkclient:0.2'
-  compile ('log4j:log4j:1.2.14') {
-    exclude group: "com.sun.jdmk", module: "jmxtools"
+	//compile 'com.101tec:zkclient:0.2'
+	compile ('log4j:log4j:1.2.14') {
+		exclude group: "com.sun.jdmk", module: "jmxtools"
         exclude group: "com.sun.jmx", module: "jmxri"
         exclude group: "javax.jms", module: "jms"
-  }
-  compile ('org.apache.zookeeper:zookeeper:3.3.1') {
-    exclude group: "com.sun.jdmk", module: "jmxtools"
+	}
+	compile ('org.apache.zookeeper:zookeeper:3.3.1') {
+		exclude group: "com.sun.jdmk", module: "jmxtools"
         exclude group: "com.sun.jmx", module: "jmxri"
         exclude group: "javax.jms", module: "jms"
-  }
-  testCompile 'junit:junit:4.7'
-  testCompile 'commons-io:commons-io:1.4'
-  testCompile 'org.mockito:mockito-core:1.8.0'
-  
-  //dependencies of mockito
-  testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
+	}
+	testCompile 'junit:junit:4.7'
+	testCompile 'commons-io:commons-io:1.4'
+	testCompile 'org.mockito:mockito-core:1.8.0'
+	
+	//dependencies of mockito
+	testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
 }
 
 
@@ -56,11 +56,11 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allSource
 }
 task javadocJar(type: Jar, dependsOn:javadoc) {      
-  classifier = 'javadoc'     
-  from javadoc.destinationDir 
+	classifier = 'javadoc'     
+	from javadoc.destinationDir 
 }   
 artifacts {
-  archives sourceJar      
+	archives sourceJar      
     archives javadocJar
 }
 task jars(dependsOn: ['jar','sourceJar'], description: 'Build jar & source jar') << {}
@@ -71,13 +71,13 @@ task jars(dependsOn: ['jar','sourceJar'], description: 'Build jar & source jar')
 //--------------------
 eclipse {
     classpath {
-      defaultOutputDir = file('build-eclipse')
+    	defaultOutputDir = file('build-eclipse')
     }
 }
 
 task eclipseJdtPrepare(type: Copy) {
-  from rootProject.file('src/build/eclipse/org.eclipse.jdt.core.prefs')
-  into project.file('.settings/')
+	from rootProject.file('src/build/eclipse/org.eclipse.jdt.core.prefs')
+	into project.file('.settings/')
 }
 tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare)
 
@@ -97,39 +97,39 @@ uploadArchives {
     repositories.mavenDeployer {
         //repository(url: "file:///tmp/mavenRepo")
         repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-          authentication(userName: sonatypeUsername, password: sonatypePassword)
+        	authentication(userName: sonatypeUsername, password: sonatypePassword)
         }
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
         pom.project {
-          name 'ZkClient'
-          packaging 'jar'
-          description 'A zookeeper client, that makes life a little easier.'
-          url 'https://github.com/sgroschupf/zkclient'
-          licenses {
-              license {
-                  name 'The Apache Software License, Version 2.0'
+        	name 'ZkClient'
+        	packaging 'jar'
+        	description 'A zookeeper client, that makes life a little easier.'
+        	url 'https://github.com/sgroschupf/zkclient'
+        	licenses {
+            	license {
+                	name 'The Apache Software License, Version 2.0'
                     url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
                     distribution 'repo'
                 }
             }
             scm {
-              url 'https://github.com/sgroschupf/zkclient'
-              connection 'scm:git:git://github.com/sgroschupf/zkclient.git'
-              developerConnection 'scm:git:https://github.com/sgroschupf/zkclient.git'
+            	url 'https://github.com/sgroschupf/zkclient'
+            	connection 'scm:git:git://github.com/sgroschupf/zkclient.git'
+            	developerConnection 'scm:git:https://github.com/sgroschupf/zkclient.git'
             }
             developers {
-              developer {
-                id 'sgroschupf'
-                name 'Stefan Groshupf'
-              }
-              developer {
-                id 'pvoss'
-                name 'Peter Voss'
-              }
-              developer {
-                id 'jzillmann'
-                name 'Johannes Zillmann'
-              }
+            	developer {
+            		id 'sgroschupf'
+            		name 'Stefan Groshupf'
+            	}
+            	developer {
+            		id 'pvoss'
+            		name 'Peter Voss'
+            	}
+            	developer {
+            		id 'jzillmann'
+            		name 'Johannes Zillmann'
+            	}
             }
         }
     }
