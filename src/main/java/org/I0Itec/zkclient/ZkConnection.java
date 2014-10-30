@@ -25,9 +25,10 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 public class ZkConnection implements IZkConnection {
@@ -87,6 +88,11 @@ public class ZkConnection implements IZkConnection {
         return _zk.create(path, data, Ids.OPEN_ACL_UNSAFE, mode);
     }
 
+    @Override
+    public String create(String path, byte[] data, List<ACL> acl, CreateMode mode) throws KeeperException, InterruptedException {
+        return _zk.create(path, data, acl, mode);
+    }
+
     public void delete(String path) throws InterruptedException, KeeperException {
         _zk.delete(path, -1);
     }
@@ -135,5 +141,10 @@ public class ZkConnection implements IZkConnection {
     @Override
     public String getServers() {
         return _servers;
+    }
+
+    @Override
+    public void addAuthInfo(String scheme, byte[] auth) {
+        _zk.addAuthInfo(scheme, auth);
     }
 }

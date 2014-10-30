@@ -38,29 +38,53 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
 import org.apache.zookeeper.data.Stat;
 
+/**
+ * Emulating a ZooKeeper server with few hash tables. Basically a mock class used for testing. Please avoid using this
+ * as your ZK in production :)
+ * 
+ * Note that the addAuth is even more mocked than usual Since we have no authentication provider (i.e. Kerberos) around
+ * we simply take the auth byte[] and convert it to string to get the Id scheme remains the same
+ */
 public class InMemoryConnection implements IZkConnection {
 
-	public static class DataAndVersion {
-		private byte[] _data;
-		private int _version;
-		public DataAndVersion(byte[] data, int version) {
-			_data = data;
-			_version = version;
-		}
-		public byte[] getData() {
-			return _data;
-		}
-		public int getVersion() {
-			return _version;
-		}
-	}
-	
+    public static class DataAndVersion {
+        private byte[] _data;
+        private int _version;
+        private List<ACL> _acl;
+
+        public DataAndVersion(byte[] data, int version, List<ACL> acl) {
+            _data = data;
+            _version = version;
+            _acl = acl;
+        }
+
+        public DataAndVersion(byte[] data, int version) {
+            this(data, version, null);
+        }
+
+        public byte[] getData() {
+            return _data;
+        }
+
+        public int getVersion() {
+            return _version;
+        }
+
+        public List<ACL> getAcl() {
+            return _acl;
+        }
+    }
+
     private Lock _lock = new ReentrantLock(true);
     private Map<String, DataAndVersion> _data = new HashMap<String, DataAndVersion>();
     private Map<String, Long> _creationTime = new HashMap<String, Long>();
+    private List<Id> _ids = new ArrayList<Id>();
     private final AtomicInteger sequence = new AtomicInteger(0);
 
     private Set<String> _dataWatches = new HashSet<String>();
@@ -133,7 +157,7 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException {
+    public String create(String path, byte[] data, List<ACL> acl, CreateMode mode) throws KeeperException, InterruptedException {
         _lock.lock();
         try {
 
@@ -145,11 +169,13 @@ public class InMemoryConnection implements IZkConnection {
             if (exists(path, false)) {
                 throw new KeeperException.NodeExistsException();
             }
-            _data.put(path, new DataAndVersion(data, 0));
+            String parentPath = getParentPath(path);
+            checkACL(parentPath, ZooDefs.Perms.CREATE);
+
+            _data.put(path, new DataAndVersion(data, 0, acl));
             _creationTime.put(path, System.currentTimeMillis());
             checkWatch(_nodeWatches, path, EventType.NodeCreated);
             // we also need to send a child change event for the parent
-            String parentPath = getParentPath(path);
             if (parentPath != null) {
                 checkWatch(_nodeWatches, parentPath, EventType.NodeChildrenChanged);
             }
@@ -157,6 +183,11 @@ public class InMemoryConnection implements IZkConnection {
         } finally {
             _lock.unlock();
         }
+    }
+
+    @Override
+    public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException {
+        return create(path, data, null, mode);
     }
 
     private String getParentPath(String path) {
@@ -174,10 +205,11 @@ public class InMemoryConnection implements IZkConnection {
             if (!exists(path, false)) {
                 throw new KeeperException.NoNodeException();
             }
+            String parentPath = getParentPath(path);
+            checkACL(parentPath, ZooDefs.Perms.DELETE);
             _data.remove(path);
             _creationTime.remove(path);
             checkWatch(_nodeWatches, path, EventType.NodeDeleted);
-            String parentPath = getParentPath(path);
             if (parentPath != null) {
                 checkWatch(_nodeWatches, parentPath, EventType.NodeChildrenChanged);
             }
@@ -212,6 +244,7 @@ public class InMemoryConnection implements IZkConnection {
             installWatch(_nodeWatches, path);
         }
 
+        checkACL(path, ZooDefs.Perms.READ);
         ArrayList<String> children = new ArrayList<String>();
         String[] directoryStack = path.split("/");
         Set<String> keySet = _data.keySet();
@@ -250,13 +283,14 @@ public class InMemoryConnection implements IZkConnection {
         }
         _lock.lock();
         try {
-        	DataAndVersion dataAndVersion = _data.get(path);
+            DataAndVersion dataAndVersion = _data.get(path);
             if (dataAndVersion == null) {
                 throw new ZkNoNodeException(new KeeperException.NoNodeException());
             }
+            checkACL(path, ZooDefs.Perms.READ);
             byte[] bs = dataAndVersion.getData();
             if (stat != null)
-            	stat.setVersion(dataAndVersion.getVersion());
+                stat.setVersion(dataAndVersion.getVersion());
             return bs;
         } finally {
             _lock.unlock();
@@ -265,18 +299,19 @@ public class InMemoryConnection implements IZkConnection {
 
     @Override
     public void writeData(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
-    	writeDataReturnStat(path, data, expectedVersion);
+        writeDataReturnStat(path, data, expectedVersion);
     }
 
     @Override
     public Stat writeDataReturnStat(String path, byte[] data, int expectedVersion) throws KeeperException, InterruptedException {
-    	int newVersion=-1;
-    	_lock.lock();
+        int newVersion = -1;
+        _lock.lock();
         try {
             checkWatch(_dataWatches, path, EventType.NodeDataChanged);
             if (!exists(path, false)) {
                 throw new KeeperException.NoNodeException();
             }
+            checkACL(path, ZooDefs.Perms.WRITE);
             newVersion = _data.get(path).getVersion() + 1;
             _data.put(path, new DataAndVersion(data, newVersion));
             String parentPath = getParentPath(path);
@@ -310,5 +345,48 @@ public class InMemoryConnection implements IZkConnection {
     @Override
     public String getServers() {
         return "mem";
+    }
+
+    @Override
+    public void addAuthInfo(String scheme, byte[] auth) {
+        _ids.add(new Id(scheme, new String(auth)));
+    }
+
+    /***
+     * 
+     * @param path
+     *            - path of znode we are accessing
+     * @param perm
+     *            - Privileges required for the action
+     * @throws KeeperException.NoAuthException
+     */
+    private void checkACL(String path, int perm) throws KeeperException.NoAuthException {
+        DataAndVersion node = _data.get(path);
+        if (node == null) {
+            return;
+        }
+        List<ACL> acl = node.getAcl();
+        if (acl == null || acl.size() == 0) {
+            return;
+        }
+        for (Id authId : _ids) {
+            if (authId.getScheme().equals("super")) {
+                return;
+            }
+        }
+        for (ACL a : acl) {
+            Id id = a.getId();
+            if ((a.getPerms() & perm) != 0) {
+                if (id.getScheme().equals("world") && id.getId().equals("anyone")) {
+                    return;
+                }
+                for (Id authId : _ids) {
+                    if (authId.getScheme().equals(id.getScheme()) && authId.getId().equals(id.getId())) {
+                        return;
+                    }
+                }
+            }
+        }
+        throw new KeeperException.NoAuthException();
     }
 }
