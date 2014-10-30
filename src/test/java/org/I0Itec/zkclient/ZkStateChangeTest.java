@@ -3,6 +3,7 @@ package org.I0Itec.zkclient;
 import java.util.List;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.util.concurrent.Callable;
@@ -138,7 +139,12 @@ public class ZkStateChangeTest{
             throw new RuntimeException("not implemented");
         }
 
-        @Override
+      @Override
+      public String create(String path, byte[] data, List<ACL> acl, CreateMode mode) throws KeeperException, InterruptedException {
+        throw new RuntimeException("not implemented");
+      }
+
+      @Override
         public void delete(String path) throws InterruptedException, KeeperException{
             throw new RuntimeException("not implemented");
         }
@@ -179,6 +185,11 @@ public class ZkStateChangeTest{
         @Override
         public String getServers(){
             return "test";
+        }
+
+        @Override
+        public void addAuthInfo(String scheme, byte[] auth) {
+          throw new RuntimeException("not implemented");
         }
     }
 
