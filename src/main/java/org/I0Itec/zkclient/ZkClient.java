@@ -38,16 +38,14 @@ import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.data.ACL;
 
 /**
  * Abstracts the interaction with zookeeper and allows permanent (not just one time) watches on nodes in ZooKeeper
@@ -193,8 +191,8 @@ public class ZkClient implements Watcher {
     }
 
     /**
-     * Create a persistent node.
-     * 
+     * Create a persistent node and set its ACLs.
+     *
      * @param path
      * @param createParents
      *            if true all parent dirs are created as well and no {@link ZkNodeExistsException} is thrown in case the
@@ -209,8 +207,30 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public void createPersistent(String path, boolean createParents) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+      createPersistent(path, createParents, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+    }
+
+    /**
+     * Create a persistent node and set its ACLs.
+     * 
+     * @param path
+     * @param acl
+     *            List of ACL permissions to assign to the node
+     * @param createParents
+     *            if true all parent dirs are created as well and no {@link ZkNodeExistsException} is thrown in case the
+     *            path already exists
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public void createPersistent(String path, boolean createParents, List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
         try {
-            create(path, null, CreateMode.PERSISTENT);
+            create(path, null, acl, CreateMode.PERSISTENT);
         } catch (ZkNodeExistsException e) {
             if (!createParents) {
                 throw e;
@@ -220,8 +240,8 @@ public class ZkClient implements Watcher {
                 throw e;
             }
             String parentDir = path.substring(0, path.lastIndexOf('/'));
-            createPersistent(parentDir, createParents);
-            createPersistent(path, createParents);
+            createPersistent(parentDir, createParents, acl);
+            createPersistent(path, createParents, acl);
         }
     }
 
@@ -244,6 +264,25 @@ public class ZkClient implements Watcher {
     }
 
     /**
+     * Create a persistent node.
+     *
+     * @param path
+     * @param data
+     * @param acl
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public void createPersistent(String path, Object data, List<ACL> acl) {
+        create(path,data,acl,CreateMode.PERSISTENT);
+    }
+
+    /**
      * Create a persistent, sequental node.
      * 
      * @param path
@@ -263,8 +302,29 @@ public class ZkClient implements Watcher {
     }
 
     /**
+     * Create a persistent, sequential node and set its ACL.
+     *
+     * @param path
+     * @param acl
+     * @param data
+     * @return create node's path
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public String createPersistentSequential(String path, Object data, List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+      return create(path, data, acl, CreateMode.PERSISTENT_SEQUENTIAL);
+    }
+
+
+    /**
      * Create an ephemeral node.
-     * 
+     *
      * @param path
      * @throws ZkInterruptedException
      *             if operation was interrupted, or a required reconnection got interrupted
@@ -276,7 +336,25 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public void createEphemeral(final String path) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        create(path, null, CreateMode.EPHEMERAL);
+      create(path, null, CreateMode.EPHEMERAL);
+    }
+
+    /**
+     * Create an ephemeral node and set its ACL.
+     *
+     * @param path
+     * @param acl
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public void createEphemeral(final String path,final List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+      create(path, null, acl, CreateMode.EPHEMERAL);
     }
 
     /**
@@ -296,23 +374,49 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public String create(final String path, Object data, final CreateMode mode) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-        if (path == null) {
-            throw new NullPointerException("path must not be null.");
+        return create(path,data, ZooDefs.Ids.OPEN_ACL_UNSAFE,mode);
+    }
+
+    /**
+     * Create a node with ACL.
+     *
+     * @param path
+     * @param data
+     * @param acl
+     * @param mode
+     * @return create node's path
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public String create(final String path, Object data, final List<ACL> acl, final CreateMode mode) {
+        if (path == null )  {
+            throw new NullPointerException("Missing value for path");
+        }
+        if (acl == null || acl.size() == 0)  {
+            throw new NullPointerException("Missing value for ACL");
         }
         final byte[] bytes = data == null ? null : serialize(data);
 
         return retryUntilConnected(new Callable<String>() {
 
-            @Override
-            public String call() throws Exception {
-                return _connection.create(path, bytes, mode);
-            }
+          @Override
+          public String call() throws Exception {
+            return _connection.create(path, bytes,acl, mode);
+          }
         });
+
+
     }
 
     /**
      * Create an ephemeral node.
-     * 
+     *
      * @param path
      * @param data
      * @throws ZkInterruptedException
@@ -326,6 +430,25 @@ public class ZkClient implements Watcher {
      */
     public void createEphemeral(final String path, final Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
         create(path, data, CreateMode.EPHEMERAL);
+    }
+
+    /**
+     * Create an ephemeral node.
+     *
+     * @param path
+     * @param data
+     * @param acl
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public void createEphemeral(final String path, final Object data, final List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+      create(path, data, acl, CreateMode.EPHEMERAL);
     }
 
     /**
@@ -345,6 +468,26 @@ public class ZkClient implements Watcher {
      */
     public String createEphemeralSequential(final String path, final Object data) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
         return create(path, data, CreateMode.EPHEMERAL_SEQUENTIAL);
+    }
+
+    /**
+     * Create an ephemeral, sequential node with ACL.
+     *
+     * @param path
+     * @param data
+     * @param acl
+     * @return created path
+     * @throws ZkInterruptedException
+     *             if operation was interrupted, or a required reconnection got interrupted
+     * @throws IllegalArgumentException
+     *             if called from anything except the ZooKeeper event thread
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public String createEphemeralSequential(final String path, final Object data, final List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
+      return create(path, data, acl, CreateMode.EPHEMERAL_SEQUENTIAL);
     }
 
     public void process(WatchedEvent event) {
@@ -866,6 +1009,16 @@ public class ZkClient implements Watcher {
                 }
                 return null;
             }
+        });
+    }
+
+    public void addAuthInfo(final String scheme, final byte[] auth) {
+        retryUntilConnected(new Callable<Object>() {
+          @Override
+          public Object call() throws Exception {
+            _connection.addAuthInfo(scheme, auth);
+            return null;
+          }
         });
     }
 
