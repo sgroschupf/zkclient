@@ -27,23 +27,23 @@ public class ZkAuthTest extends AbstractAuthTest {
     @Override
     @Before
     public void setUp() throws Exception {
-      super.setUp();
-      _zkServer = TestUtil.startZkServer("ZkClientTest", 4711);
-      _client = new ZkClient("localhost:4711", 5000);
+        super.setUp();
+        _zkServer = TestUtil.startZkServer("ZkClientTest", 4711);
+        _client = new ZkClient("localhost:4711", 5000);
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
-      super.tearDown();
-      _client.close();
-      _zkServer.shutdown();
+        super.tearDown();
+        _client.close();
+        _zkServer.shutdown();
     }
 
     @Test
     public void testAuthorized()  {
-      _client.addAuthInfo("digest", "pat:pass".getBytes());
-      _client.create("/path1", null, ZooDefs.Ids.CREATOR_ALL_ACL, CreateMode.PERSISTENT);
-      _client.readData("/path1");
+        _client.addAuthInfo("digest", "pat:pass".getBytes());
+        _client.create("/path1", null, ZooDefs.Ids.CREATOR_ALL_ACL, CreateMode.PERSISTENT);
+        _client.readData("/path1");
     }
 }

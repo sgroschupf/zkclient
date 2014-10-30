@@ -187,10 +187,10 @@ public class ZkStateChangeTest{
             return "test";
         }
 
-      @Override
-      public void addAuthInfo(String scheme, byte[] auth) {
-        throw new RuntimeException("not implemented");
-      }
+        @Override
+        public void addAuthInfo(String scheme, byte[] auth) {
+          throw new RuntimeException("not implemented");
+        }
     }
 
     private static class TestStateListener implements IZkStateListener{

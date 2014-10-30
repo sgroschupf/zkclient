@@ -28,24 +28,24 @@ import java.util.List;
 
 public class InMemoryAuthTest extends AbstractAuthTest {
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    _client = new ZkClient(new InMemoryConnection());
-  }
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        _client = new ZkClient(new InMemoryConnection());
+    }
 
-  @Override
-  public void tearDown() throws Exception {
-    super.tearDown();
-    _client.close();
-  }
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        _client.close();
+    }
 
-  @Test
-  public void testAuthorized()  {
-    List<ACL> acl = new ArrayList<ACL>();
-    acl.add(new ACL(ZooDefs.Perms.ALL, new Id("digest", "pat:pass")));
-    _client.addAuthInfo("digest", "pat:pass".getBytes());
-    _client.create("/path1", null, acl , CreateMode.PERSISTENT);
-    _client.readData("/path1");
-  }
+    @Test
+    public void testAuthorized()  {
+        List<ACL> acl = new ArrayList<ACL>();
+        acl.add(new ACL(ZooDefs.Perms.ALL, new Id("digest", "pat:pass")));
+        _client.addAuthInfo("digest", "pat:pass".getBytes());
+        _client.create("/path1", null, acl , CreateMode.PERSISTENT);
+        _client.readData("/path1");
+    }
 }

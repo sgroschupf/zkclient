@@ -38,7 +38,11 @@ import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.I0Itec.zkclient.util.ZkPathUtil;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -318,7 +322,7 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public String createPersistentSequential(String path, Object data, List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-      return create(path, data, acl, CreateMode.PERSISTENT_SEQUENTIAL);
+        return create(path, data, acl, CreateMode.PERSISTENT_SEQUENTIAL);
     }
 
 
@@ -336,7 +340,7 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public void createEphemeral(final String path) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-      create(path, null, CreateMode.EPHEMERAL);
+        create(path, null, CreateMode.EPHEMERAL);
     }
 
     /**
@@ -354,7 +358,7 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public void createEphemeral(final String path,final List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-      create(path, null, acl, CreateMode.EPHEMERAL);
+        create(path, null, acl, CreateMode.EPHEMERAL);
     }
 
     /**
@@ -404,11 +408,10 @@ public class ZkClient implements Watcher {
         final byte[] bytes = data == null ? null : serialize(data);
 
         return retryUntilConnected(new Callable<String>() {
-
-          @Override
-          public String call() throws Exception {
-            return _connection.create(path, bytes,acl, mode);
-          }
+            @Override
+            public String call() throws Exception {
+                return _connection.create(path, bytes,acl, mode);
+            }
         });
 
 
@@ -448,7 +451,7 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public void createEphemeral(final String path, final Object data, final List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-      create(path, data, acl, CreateMode.EPHEMERAL);
+        create(path, data, acl, CreateMode.EPHEMERAL);
     }
 
     /**
@@ -487,7 +490,7 @@ public class ZkClient implements Watcher {
      *             if any other exception occurs
      */
     public String createEphemeralSequential(final String path, final Object data, final List<ACL> acl) throws ZkInterruptedException, IllegalArgumentException, ZkException, RuntimeException {
-      return create(path, data, acl, CreateMode.EPHEMERAL_SEQUENTIAL);
+        return create(path, data, acl, CreateMode.EPHEMERAL_SEQUENTIAL);
     }
 
     public void process(WatchedEvent event) {
@@ -1012,6 +1015,12 @@ public class ZkClient implements Watcher {
         });
     }
 
+  /**
+   * Add authentication information to the connection.
+   * This will be used to identify the user and check access to nodes protected by ACLs
+   * @param scheme
+   * @param auth
+   */
     public void addAuthInfo(final String scheme, final byte[] auth) {
         retryUntilConnected(new Callable<Object>() {
           @Override

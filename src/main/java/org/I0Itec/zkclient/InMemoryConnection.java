@@ -31,7 +31,11 @@ import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
 import org.I0Itec.zkclient.util.ZkPathUtil;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
@@ -52,30 +56,31 @@ import org.apache.zookeeper.data.Stat;
  */
 public class InMemoryConnection implements IZkConnection {
 
-  public static class DataAndVersion {
-		private byte[] _data;
-		private int _version;
-    private List<ACL> _acl;
+    public static class DataAndVersion {
+        private byte[] _data;
+        private int _version;
+        private List<ACL> _acl;
 
-		public DataAndVersion(byte[] data, int version,List<ACL> acl) {
-			_data = data;
-			_version = version;
-      _acl = acl;
-		}
+        public DataAndVersion(byte[] data, int version,List<ACL> acl) {
+            _data = data;
+            _version = version;
+            _acl = acl;
+        }
 
-    public DataAndVersion(byte[] data, int version) {
-      this(data,version,null);
-    }
-		public byte[] getData() {
-			return _data;
-		}
-		public int getVersion() {
-			return _version;
-		}
-    public List<ACL> getAcl() {
-      return _acl;
-    }
-	}
+        public DataAndVersion(byte[] data, int version) {
+            this(data,version,null);
+        }
+        public byte[] getData() {
+              return _data;
+        }
+        public int getVersion() {
+              return _version;
+        }
+
+        public List<ACL> getAcl() {
+            return _acl;
+        }
+	  }
 	
     private Lock _lock = new ReentrantLock(true);
     private Map<String, DataAndVersion> _data = new HashMap<String, DataAndVersion>();
