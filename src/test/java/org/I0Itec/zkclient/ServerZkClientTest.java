@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
@@ -80,6 +82,45 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
 
         zkClient.close();
         gateway.stop();
+    }
+
+    @Test(timeout = 10000)
+    public void testReadWithTimeout() throws Exception {
+        final ZkClient zkClient = new ZkClient("localhost:4711", 2000, 2000, new SerializableSerializer(), 5000);
+        // shutdown the server
+        LOG.info("Shutting down zookeeper server " + _zkServer);
+        _zkServer.shutdown();
+        // now invoke read operation through the client
+        try {
+            LOG.info("Invoking read on ZkClient when ZK server is down");
+            zkClient.readData("/b");
+            fail("A timeout exception was expected while performing a read through ZkClient, when ZK server is down");
+        } catch (ZkTimeoutException zkte) {
+            // expected
+            LOG.info("Received the *expected* timeout exception while doing an operation through ZkClient", zkte);
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testRetryWithTimeout() throws Exception {
+        final ZkClient zkClient = new ZkClient("localhost:4711", 2000, 2000, new SerializableSerializer(), 5000);
+        // shutdown the server
+        LOG.info("Shutting down zookeeper server " + _zkServer);
+        _zkServer.shutdown();
+        // test the retry method directly
+        try {
+            LOG.info("Invoking retryUntilConnected on ZkClient when ZK server is down");
+            zkClient.retryUntilConnected(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return zkClient._connection.exists("/b", true);
+                }
+            });
+            fail("A timeout exception was expected while performing an operation through ZkClient with the ZK server down");
+        } catch (ZkTimeoutException zkte) {
+            // expected
+            LOG.info("Received the *expected* timeout exception from ZkClient.retryUntilConnected", zkte);
+        }
     }
 
     @Test(timeout = 15000)
