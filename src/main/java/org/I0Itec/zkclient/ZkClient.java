@@ -59,6 +59,7 @@ public class ZkClient implements Watcher {
     private final static Logger LOG = Logger.getLogger(ZkClient.class);
 
     protected IZkConnection _connection;
+    protected final long operationRetryTimeoutInMillis;
     private final Map<String, Set<IZkChildListener>> _childListener = new ConcurrentHashMap<String, Set<IZkChildListener>>();
     private final ConcurrentHashMap<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
     private final Set<IZkStateListener> _stateListener = new CopyOnWriteArraySet<IZkStateListener>();
@@ -86,6 +87,21 @@ public class ZkClient implements Watcher {
         this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout, zkSerializer);
     }
 
+    /**
+     *
+     * @param zkServers The Zookeeper servers
+     * @param sessionTimeout The session timeout in milli seconds
+     * @param connectionTimeout The connection timeout in milli seconds
+     * @param zkSerializer The Zookeeper data serializer
+     * @param operationRetryTimeout Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like connection
+     *                              loss with the Zookeeper servers. During such failures, this <code>operationRetryTimeout</code> decides the maximum
+     *                              amount of time, in milli seconds, each operation is retried. A value lesser than 0 is considered
+     *                              as "retry forever until a connection has been reestablished".
+     */
+    public ZkClient(final String zkServers, final int sessionTimeout, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout) {
+        this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout, zkSerializer, operationRetryTimeout);
+    }
+
     public ZkClient(IZkConnection connection) {
         this(connection, Integer.MAX_VALUE);
     }
@@ -95,8 +111,23 @@ public class ZkClient implements Watcher {
     }
 
     public ZkClient(IZkConnection zkConnection, int connectionTimeout, ZkSerializer zkSerializer) {
+        this(zkConnection, connectionTimeout, zkSerializer, -1);
+    }
+
+    /**
+     *
+     * @param zkConnection The Zookeeper servers
+     * @param connectionTimeout The connection timeout in milli seconds
+     * @param zkSerializer The Zookeeper data serializer
+     * @param operationRetryTimeout Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like connection
+     *                              loss with the Zookeeper servers. During such failures, this <code>operationRetryTimeout</code> decides the maximum
+     *                              amount of time, in milli seconds, each operation is retried. A value lesser than 0 is considered
+     *                              as "retry forever until a connection has been reestablished".
+     */
+    public ZkClient(final IZkConnection zkConnection, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout) {
         _connection = zkConnection;
         _zkSerializer = zkSerializer;
+        this.operationRetryTimeoutInMillis = operationRetryTimeout;
         connect(connectionTimeout, this);
     }
 
@@ -826,17 +857,18 @@ public class ZkClient implements Watcher {
         if (_zookeeperEventThread != null && Thread.currentThread() == _zookeeperEventThread) {
             throw new IllegalArgumentException("Must not be done in the zookeeper event thread.");
         }
+        final long operationStartTime = System.currentTimeMillis();
         while (true) {
             try {
                 return callable.call();
             } catch (ConnectionLossException e) {
                 // we give the event thread some time to update the status to 'Disconnected'
                 Thread.yield();
-                waitUntilConnected();
+                waitForRetry();
             } catch (SessionExpiredException e) {
                 // we give the event thread some time to update the status to 'Expired'
                 Thread.yield();
-                waitUntilConnected();
+                waitForRetry();
             } catch (KeeperException e) {
                 throw ZkException.create(e);
             } catch (InterruptedException e) {
@@ -844,7 +876,19 @@ public class ZkClient implements Watcher {
             } catch (Exception e) {
                 throw ExceptionUtil.convertToRuntimeException(e);
             }
+            // before attempting a retry, check whether retry timeout has elapsed
+            if (this.operationRetryTimeoutInMillis > -1 && (System.currentTimeMillis() - operationStartTime) >= this.operationRetryTimeoutInMillis) {
+                throw new ZkTimeoutException("Operation cannot be retried because of retry timeout (" + this.operationRetryTimeoutInMillis + " milli seconds)");
+            }
         }
+    }
+
+    private void waitForRetry() {
+        if (this.operationRetryTimeoutInMillis < 0) {
+            this.waitUntilConnected();
+            return;
+        }
+        this.waitUntilConnected(this.operationRetryTimeoutInMillis, TimeUnit.MILLISECONDS);
     }
 
     public void setCurrentState(KeeperState currentState) {
