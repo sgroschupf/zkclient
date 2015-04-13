@@ -37,4 +37,16 @@ public interface IZkStateListener {
      *             On any error.
      */
     public void handleNewSession() throws Exception;
+
+    /**
+     * Called when a session cannot be re-established. This should be used to implement connection
+     * failure handling e.g. retry to connect or pass the error up
+     * 
+     * @param error
+     *            The error that prevents a session from being established
+     * @throws Exception
+     *             On any error.
+     */
+    public void handleSessionEstablishmentError(final Throwable error) throws Exception;
+
 }

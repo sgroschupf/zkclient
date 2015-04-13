@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
@@ -55,7 +57,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         _zkServer.shutdown();
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 15000)
     public void testRetryUntilConnected() throws Exception {
         LOG.info("--- testRetryUntilConnected");
         Gateway gateway = new Gateway(4712, 4711);
@@ -83,7 +85,46 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         gateway.stop();
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 10000)
+    public void testReadWithTimeout() throws Exception {
+        final ZkClient zkClient = new ZkClient("localhost:4711", 5000, 5000, new SerializableSerializer(), 5000);
+        // shutdown the server
+        LOG.info("Shutting down zookeeper server " + _zkServer);
+        _zkServer.shutdown();
+        // now invoke read operation through the client
+        try {
+            LOG.info("Invoking read on ZkClient when ZK server is down");
+            zkClient.readData("/b");
+            fail("A timeout exception was expected while performing a read through ZkClient, when ZK server is down");
+        } catch (ZkTimeoutException zkte) {
+            // expected
+            LOG.info("Received the *expected* timeout exception while doing an operation through ZkClient", zkte);
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testRetryWithTimeout() throws Exception {
+        final ZkClient zkClient = new ZkClient("localhost:4711", 2000, 2000, new SerializableSerializer(), 5000);
+        // shutdown the server
+        LOG.info("Shutting down zookeeper server " + _zkServer);
+        _zkServer.shutdown();
+        // test the retry method directly
+        try {
+            LOG.info("Invoking retryUntilConnected on ZkClient when ZK server is down");
+            zkClient.retryUntilConnected(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return zkClient._connection.exists("/b", true);
+                }
+            });
+            fail("A timeout exception was expected while performing an operation through ZkClient with the ZK server down");
+        } catch (ZkTimeoutException zkte) {
+            // expected
+            LOG.info("Received the *expected* timeout exception from ZkClient.retryUntilConnected", zkte);
+        }
+    }
+
+    @Test(timeout = 15000)
     public void testWaitUntilConnected() throws Exception {
         LOG.info("--- testWaitUntilConnected");
         ZkClient _client = new ZkClient("localhost:4711", CONNECTION_TIMEOUT);
@@ -97,7 +138,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         assertFalse(_client.waitUntilConnected(100, TimeUnit.MILLISECONDS));
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 15000)
     public void testRetryUntilConnected_SessionExpiredException() {
         LOG.info("--- testRetryUntilConnected_SessionExpiredException");
 
@@ -130,7 +171,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         gateway.stop();
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 15000)
     public void testChildListenerAfterSessionExpiredException() throws Exception {
         LOG.info("--- testChildListenerAfterSessionExpiredException");
 

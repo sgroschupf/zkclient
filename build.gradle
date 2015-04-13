@@ -1,0 +1,152 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'project-reports'
+apply plugin: 'osgi'
+
+group = 'com.101tec'
+version = '0.5-dev'
+sourceCompatibility = 1.6
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'ZkClient', 'Implementation-Version': version
+    }
+}
+
+
+//--------------------
+// Dependencies
+//--------------------
+repositories {
+    flatDir(dirs: 'lib')
+	// mavenCentral()
+	// maven {
+    //     url "https://oss.sonatype.org/content/repositories/com101tec-553"
+    //}
+}
+dependencies {
+	//compile 'com.101tec:zkclient:0.2'
+	compile ('log4j:log4j:1.2.15') {
+		exclude group: "com.sun.jdmk", module: "jmxtools"
+        exclude group: "com.sun.jmx", module: "jmxri"
+        exclude group: "javax.jms", module: "jms"
+	}
+	compile 'org.apache.zookeeper:zookeeper:3.4.3'
+    compile 'javax.activation:activation:1.1'
+    compile 'org.hamcrest:hamcrest-core:1.1'
+    compile 'javax.activation:activation:1.1'
+    compile 'jline:jline:0.9.94'
+    compile 'javax.mail:mail:1.4'
+//    compile 'io.netty:netty:3.2.2'
+    compile 'org.objenesis:objenesis:1.0'
+    compile 'org.slf4j:slf4j-api:1.6.1'
+    compile 'org.slf4j:slf4j-log4j12:1.6.1'
+
+	testCompile 'junit:junit:4.8.1'
+	testCompile 'commons-io:commons-io:1.4'
+	testCompile 'org.mockito:mockito-core:1.8.0'
+
+	
+	//dependencies of mockito
+	testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
+}
+
+
+//--------------------
+// Source Jar
+//--------------------
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+task javadocJar(type: Jar, dependsOn:javadoc) {      
+	classifier = 'javadoc'     
+	from javadoc.destinationDir 
+}   
+artifacts {
+	archives sourceJar      
+    archives javadocJar
+}
+task jars(dependsOn: ['jar','sourceJar'], description: 'Build jar & source jar') << {}
+
+
+//--------------------
+// Eclipse Setup
+//--------------------
+eclipse {
+    classpath {
+    	defaultOutputDir = file('build-eclipse')
+    }
+}
+
+task eclipseJdtPrepare(type: Copy) {
+	from rootProject.file('src/build/eclipse/org.eclipse.jdt.core.prefs')
+	into project.file('.settings/')
+}
+tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare)
+
+
+//--------------------
+// Maven Artifact publishing
+//--------------------
+
+signing {
+    required { gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+
+uploadArchives {
+
+    repositories.mavenDeployer {
+        //repository(url: "file:///tmp/mavenRepo")
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        	authentication(userName: sonatypeUsername, password: sonatypePassword)
+        }
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        pom.project {
+        	name 'ZkClient'
+        	packaging 'jar'
+        	description 'A zookeeper client, that makes life a little easier.'
+        	url 'https://github.com/sgroschupf/zkclient'
+        	licenses {
+            	license {
+                	name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            scm {
+            	url 'https://github.com/sgroschupf/zkclient'
+            	connection 'scm:git:git://github.com/sgroschupf/zkclient.git'
+            	developerConnection 'scm:git:https://github.com/sgroschupf/zkclient.git'
+            }
+            developers {
+            	developer {
+            		id 'sgroschupf'
+            		name 'Stefan Groshupf'
+            	}
+            	developer {
+            		id 'pvoss'
+            		name 'Peter Voss'
+            	}
+            	developer {
+            		id 'jzillmann'
+            		name 'Johannes Zillmann'
+            	}
+            }
+        }
+    }
+}
+
+
+//--------------------
+// Util methods
+//--------------------
+task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') {
+    gradleVersion = '1.3'
+}
+
