@@ -47,7 +47,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
@@ -88,15 +87,21 @@ public class ZkClient implements Watcher {
     }
 
     /**
-     *
-     * @param zkServers The Zookeeper servers
-     * @param sessionTimeout The session timeout in milli seconds
-     * @param connectionTimeout The connection timeout in milli seconds
-     * @param zkSerializer The Zookeeper data serializer
-     * @param operationRetryTimeout Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like connection
-     *                              loss with the Zookeeper servers. During such failures, this <code>operationRetryTimeout</code> decides the maximum
-     *                              amount of time, in milli seconds, each operation is retried. A value lesser than 0 is considered
-     *                              as "retry forever until a connection has been reestablished".
+     * 
+     * @param zkServers
+     *            The Zookeeper servers
+     * @param sessionTimeout
+     *            The session timeout in milli seconds
+     * @param connectionTimeout
+     *            The connection timeout in milli seconds
+     * @param zkSerializer
+     *            The Zookeeper data serializer
+     * @param operationRetryTimeout
+     *            Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like
+     *            connection loss with the Zookeeper servers. During such failures, this
+     *            <code>operationRetryTimeout</code> decides the maximum amount of time, in milli seconds, each
+     *            operation is retried. A value lesser than 0 is considered as
+     *            "retry forever until a connection has been reestablished".
      */
     public ZkClient(final String zkServers, final int sessionTimeout, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout) {
         this(new ZkConnection(zkServers, sessionTimeout), connectionTimeout, zkSerializer, operationRetryTimeout);
@@ -115,14 +120,19 @@ public class ZkClient implements Watcher {
     }
 
     /**
-     *
-     * @param zkConnection The Zookeeper servers
-     * @param connectionTimeout The connection timeout in milli seconds
-     * @param zkSerializer The Zookeeper data serializer
-     * @param operationRetryTimeout Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like connection
-     *                              loss with the Zookeeper servers. During such failures, this <code>operationRetryTimeout</code> decides the maximum
-     *                              amount of time, in milli seconds, each operation is retried. A value lesser than 0 is considered
-     *                              as "retry forever until a connection has been reestablished".
+     * 
+     * @param zkConnection
+     *            The Zookeeper servers
+     * @param connectionTimeout
+     *            The connection timeout in milli seconds
+     * @param zkSerializer
+     *            The Zookeeper data serializer
+     * @param operationRetryTimeout
+     *            Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like
+     *            connection loss with the Zookeeper servers. During such failures, this
+     *            <code>operationRetryTimeout</code> decides the maximum amount of time, in milli seconds, each
+     *            operation is retried. A value lesser than 0 is considered as
+     *            "retry forever until a connection has been reestablished".
      */
     public ZkClient(final IZkConnection zkConnection, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout) {
         _connection = zkConnection;
@@ -1097,9 +1107,6 @@ public class ZkClient implements Watcher {
                 throw new ZkTimeoutException("Unable to connect to zookeeper server within timeout: " + maxMsToWaitUntilConnected);
             }
             started = true;
-        } catch (InterruptedException e) {
-            States state = _connection.getZookeeperState();
-            throw new IllegalStateException("Not connected with zookeeper server yet. Current state is " + state);
         } finally {
             getEventLock().unlock();
 
@@ -1112,7 +1119,7 @@ public class ZkClient implements Watcher {
     }
 
     public long getCreationTime(String path) {
-        getEventLock().lockInterruptibly();
+        acquireEventLock();
         try {
             return _connection.getCreateTime(path);
         } catch (KeeperException e) {
