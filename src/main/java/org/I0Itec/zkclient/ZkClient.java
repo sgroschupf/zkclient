@@ -42,6 +42,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.KeeperException.SessionExpiredException;
+import org.apache.zookeeper.Op;
+import org.apache.zookeeper.OpResult;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -1187,5 +1189,19 @@ public class ZkClient implements Watcher {
         listeners += _stateListener.size();
 
         return listeners;
+    }
+
+    public List<OpResult> multi(final Iterable<Op> ops) throws ZkException {
+        if (ops == null) {
+            throw new NullPointerException("ops must not be null.");
+        }
+
+        return retryUntilConnected(new Callable<List<OpResult>>() {
+
+            @Override
+            public List<OpResult> call() throws Exception {
+                return _connection.multi(ops);
+            }
+        });
     }
 }

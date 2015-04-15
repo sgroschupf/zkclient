@@ -28,17 +28,15 @@ repositories {
     //}
 }
 dependencies {
-	//compile 'com.101tec:zkclient:0.2'
-	compile ('log4j:log4j:1.2.14') {
-		exclude group: "com.sun.jdmk", module: "jmxtools"
+	compile ('log4j:log4j:1.2.15') {
+        exclude group: "com.sun.jdmk", module: "jmxtools"
         exclude group: "com.sun.jmx", module: "jmxri"
         exclude group: "javax.jms", module: "jms"
 	}
-	compile ('org.apache.zookeeper:zookeeper:3.3.1') {
-		exclude group: "com.sun.jdmk", module: "jmxtools"
-        exclude group: "com.sun.jmx", module: "jmxri"
-        exclude group: "javax.jms", module: "jms"
-	}
+	compile 'org.apache.zookeeper:zookeeper:3.4.3'
+    compile 'org.slf4j:slf4j-api:1.6.1'
+    compile 'org.slf4j:slf4j-log4j12:1.6.1'
+
 	testCompile 'junit:junit:4.7'
 	testCompile 'commons-io:commons-io:1.4'
 	testCompile 'org.mockito:mockito-core:1.8.0'

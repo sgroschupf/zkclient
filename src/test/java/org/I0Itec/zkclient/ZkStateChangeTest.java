@@ -14,6 +14,8 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.Op;
+import org.apache.zookeeper.OpResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -178,6 +180,11 @@ public class ZkStateChangeTest {
         @Override
         public String getServers() {
             return "test";
+        }
+
+        @Override
+        public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
