@@ -6,3 +6,8 @@
 build-eclipse
 build
 junit*
+.idea
+*.iws
+*.iml
+*.ipr
+classes/

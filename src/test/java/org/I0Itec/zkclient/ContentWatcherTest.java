@@ -20,14 +20,15 @@ import static org.junit.Assert.assertEquals;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ContentWatcherTest {
 
-    private static final Logger LOG = Logger.getLogger(ContentWatcherTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ContentWatcherTest.class);
 
     private static final String FILE_NAME = "/ContentWatcherTest";
     private ZkServer _zkServer;

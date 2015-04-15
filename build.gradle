@@ -22,22 +22,24 @@ jar {
 //--------------------
 repositories {
     flatDir(dirs: 'lib')
-	// mavenCentral()
+	mavenCentral()
 	// maven {
     //     url "https://oss.sonatype.org/content/repositories/com101tec-553"
     //}
 }
 dependencies {
 	//compile 'com.101tec:zkclient:0.2'
-	compile ('log4j:log4j:1.2.14') {
-		exclude group: "com.sun.jdmk", module: "jmxtools"
-        exclude group: "com.sun.jmx", module: "jmxri"
-        exclude group: "javax.jms", module: "jms"
-	}
+    compile 'org.slf4j:log4j-over-slf4j:1.6.6'
+//	compile ('log4j:log4j:1.2.14') {
+//		exclude group: "com.sun.jdmk", module: "jmxtools"
+//        exclude group: "com.sun.jmx", module: "jmxri"
+//        exclude group: "javax.jms", module: "jms"
+//	}
 	compile ('org.apache.zookeeper:zookeeper:3.3.1') {
 		exclude group: "com.sun.jdmk", module: "jmxtools"
         exclude group: "com.sun.jmx", module: "jmxri"
         exclude group: "javax.jms", module: "jms"
+        exclude group: "log4j", module: "log4j"
 	}
 	testCompile 'junit:junit:4.7'
 	testCompile 'commons-io:commons-io:1.4'
@@ -45,6 +47,9 @@ dependencies {
 	
 	//dependencies of mockito
 	testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
+
+    // a logger implementation for runtime
+    runtime 'ch.qos.logback:logback-classic:1.0.7'
 }
 
 
@@ -142,4 +147,3 @@ uploadArchives {
 task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') {
     gradleVersion = '1.3'
 }
-
