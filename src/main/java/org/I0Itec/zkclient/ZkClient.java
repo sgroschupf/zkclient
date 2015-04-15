@@ -1085,8 +1085,8 @@ public class ZkClient implements Watcher {
      */
     public void connect(final long maxMsToWaitUntilConnected, Watcher watcher) throws ZkInterruptedException, ZkTimeoutException, IllegalStateException {
         boolean started = false;
+        acquireEventLock();
         try {
-            getEventLock().lockInterruptibly();
             setShutdownTrigger(false);
             _eventThread = new ZkEventThread(_connection.getServers());
             _eventThread.start();
@@ -1112,8 +1112,8 @@ public class ZkClient implements Watcher {
     }
 
     public long getCreationTime(String path) {
+        getEventLock().lockInterruptibly();
         try {
-            getEventLock().lockInterruptibly();
             return _connection.getCreateTime(path);
         } catch (KeeperException e) {
             throw ZkException.create(e);
