@@ -4,6 +4,8 @@ ZkClient: a zookeeper client, that makes life a little easier.
 + Website: 			https://github.com/sgroschupf/zkclient
 + Apache 2.0 License
 
+==> see [CHANGELOG][] for recent work
+
 
 Build ZkClient from sources:
 ---------------
@@ -32,3 +34,6 @@ Howto release ZkClient as maven artifact
 - tag with 
 	git tag -a <releaseVersion>
 - set version in build.gradle to the next dev version and commit
+
+
+[CHANGELOG]: ./CHANGELOG.markdown
