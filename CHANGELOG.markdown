@@ -1,6 +1,10 @@
 CHANGELOG
 =====
 
+ZkClient 0.6 (???)
+---------------
+
+
 ZkClient 0.5 (Apr, 2015)
 ---------------
 - Upgrade to zookeeper 3.4.3 (from 3.3.1)

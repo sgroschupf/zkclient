@@ -26,14 +26,15 @@ Howto release ZkClient as maven artifact
     signing.keyId=<yourKeyId>
     signing.password=<yourKeyPassphrase>
     signing.secretKeyRingFile=/Users/<username>/.gnupg/secring.gpg
-- set version in build.gradle to the release version and commit    
+- set version in build.gradle to the release version (e.g. 0.5-dev to 0.5) and commit    
 - execute _gradle clean uploadArchives_ to uploaded the signed artifacts to the sonatype repository
 - go to https://oss.sonatype.org/index.html#stagingRepositories and close the repository 
 - check the artifacts and if everything is ok, release the repository (on the same page)
 - syncing to central maven repository will then be activated (might take around 2h)
 - tag with 
 	git tag -a <releaseVersion>
-- set version in build.gradle to the next dev version and commit
+	git  push  --tags
+- set version in build.gradle to the next dev version (e.g 0.5 to 0.6-dev) and commit
 
 
 [CHANGELOG]: ./CHANGELOG.markdown
