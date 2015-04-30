@@ -59,7 +59,7 @@ public class ZkClient implements Watcher {
 
     private final static Logger LOG = Logger.getLogger(ZkClient.class);
 
-    protected IZkConnection _connection;
+    protected final IZkConnection _connection;
     protected final long operationRetryTimeoutInMillis;
     private final Map<String, Set<IZkChildListener>> _childListener = new ConcurrentHashMap<String, Set<IZkChildListener>>();
     private final ConcurrentHashMap<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
@@ -71,6 +71,7 @@ public class ZkClient implements Watcher {
     // TODO PVo remove this later
     private Thread _zookeeperEventThread;
     private ZkSerializer _zkSerializer;
+    private volatile boolean _closed;
 
     public ZkClient(String serverstring) {
         this(serverstring, Integer.MAX_VALUE);
@@ -137,6 +138,9 @@ public class ZkClient implements Watcher {
      *            "retry forever until a connection has been reestablished".
      */
     public ZkClient(final IZkConnection zkConnection, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout) {
+        if (zkConnection == null) {
+            throw new NullPointerException("Zookeeper connection is null!");
+        }
         _connection = zkConnection;
         _zkSerializer = zkSerializer;
         this.operationRetryTimeoutInMillis = operationRetryTimeout;
@@ -534,6 +538,7 @@ public class ZkClient implements Watcher {
         return create(path, data, acl, CreateMode.EPHEMERAL_SEQUENTIAL);
     }
 
+    @Override
     public void process(WatchedEvent event) {
         LOG.debug("Received event: " + event);
         _zookeeperEventThread = Thread.currentThread();
@@ -871,6 +876,9 @@ public class ZkClient implements Watcher {
         }
         final long operationStartTime = System.currentTimeMillis();
         while (true) {
+            if (_closed) {
+                throw new IllegalStateException("ZkClient already closed!");
+            }
             try {
                 return callable.call();
             } catch (ConnectionLossException e) {
@@ -952,10 +960,12 @@ public class ZkClient implements Watcher {
         return (T) _zkSerializer.deserialize(data);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Object> T readData(String path) {
         return (T) readData(path, false);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Object> T readData(String path, boolean returnNullIfPathNotExists) {
         T data = null;
         try {
@@ -1001,6 +1011,7 @@ public class ZkClient implements Watcher {
      * @param updater
      *            Updater that creates the new contents.
      */
+    @SuppressWarnings("unchecked")
     public <T extends Object> void updateDataSerialized(String path, DataUpdater<T> updater) {
         Stat stat = new Stat();
         boolean retry;
@@ -1139,7 +1150,7 @@ public class ZkClient implements Watcher {
      * @throws ZkInterruptedException
      */
     public void close() throws ZkInterruptedException {
-        if (_connection == null) {
+        if (_closed) {
             return;
         }
         LOG.debug("Closing ZkClient...");
@@ -1149,7 +1160,7 @@ public class ZkClient implements Watcher {
             _eventThread.interrupt();
             _eventThread.join(2000);
             _connection.close();
-            _connection = null;
+            _closed = true;
         } catch (InterruptedException e) {
             throw new ZkInterruptedException(e);
         } finally {

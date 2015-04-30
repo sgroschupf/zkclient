@@ -15,6 +15,7 @@
  */
 package org.I0Itec.zkclient;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ServerZkClientTest extends AbstractBaseZkClientTest {
-	private static final int CONNECTION_TIMEOUT = 15000;
+    private static final int CONNECTION_TIMEOUT = 15000;
     private AtomicInteger _counter = new AtomicInteger();
 
     @Override
@@ -83,6 +84,38 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
 
         zkClient.close();
         gateway.stop();
+    }
+
+    /**
+     * Test for reproducing #25 / https://issues.apache.org/jira/browse/KAFKA-824
+     * 
+     * @throws Exception
+     */
+    @Test(timeout = 15000)
+    public void testOperationInRetryLoopWhileClientGetsClosed() throws Exception {
+        LOG.info("--- testRetryUntilConnected");
+        Gateway gateway = new Gateway(4712, 4711);
+        gateway.start();
+        final ZkConnection zkConnection = new ZkConnection("localhost:4712");
+        final ZkClient zkClient = new ZkClient(zkConnection, CONNECTION_TIMEOUT);
+
+        gateway.stop();
+        final Holder<Exception> exceptionHolder = new Holder<Exception>();
+        Thread actionThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    zkClient.createPersistent("/root");
+                } catch (Exception e) {
+                    exceptionHolder.set(e);
+                }
+            }
+        };
+        actionThread.start();
+        zkClient.close();
+        actionThread.join();
+
+        assertThat(exceptionHolder.get()).isNotNull().isInstanceOf(IllegalStateException.class).hasMessageContaining("ZkClient already closed!");
     }
 
     @Test(timeout = 10000)

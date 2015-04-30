@@ -73,6 +73,7 @@ public class ZkConnection implements IZkConnection {
         }
     }
 
+    @Override
     public void close() throws InterruptedException {
         _zookeeperLock.lock();
         try {
@@ -86,6 +87,7 @@ public class ZkConnection implements IZkConnection {
         }
     }
 
+    @Override
     public String create(String path, byte[] data, CreateMode mode) throws KeeperException, InterruptedException {
         return _zk.create(path, data, Ids.OPEN_ACL_UNSAFE, mode);
     }
@@ -95,18 +97,22 @@ public class ZkConnection implements IZkConnection {
         return _zk.create(path, data, acl, mode);
     }
 
+    @Override
     public void delete(String path) throws InterruptedException, KeeperException {
         _zk.delete(path, -1);
     }
 
+    @Override
     public boolean exists(String path, boolean watch) throws KeeperException, InterruptedException {
         return _zk.exists(path, watch) != null;
     }
 
+    @Override
     public List<String> getChildren(final String path, final boolean watch) throws KeeperException, InterruptedException {
         return _zk.getChildren(path, watch);
     }
 
+    @Override
     public byte[] readData(String path, Stat stat, boolean watch) throws KeeperException, InterruptedException {
         return _zk.getData(path, watch, stat);
     }
@@ -115,14 +121,17 @@ public class ZkConnection implements IZkConnection {
         writeData(path, data, -1);
     }
 
+    @Override
     public void writeData(String path, byte[] data, int version) throws KeeperException, InterruptedException {
         _zk.setData(path, data, version);
     }
 
+    @Override
     public Stat writeDataReturnStat(String path, byte[] data, int version) throws KeeperException, InterruptedException {
         return _zk.setData(path, data, version);
     }
 
+    @Override
     public States getZookeeperState() {
         return _zk != null ? _zk.getState() : null;
     }
@@ -145,6 +154,7 @@ public class ZkConnection implements IZkConnection {
         return _servers;
     }
 
+    @Override
     public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
         return _zk.multi(ops);
     }
