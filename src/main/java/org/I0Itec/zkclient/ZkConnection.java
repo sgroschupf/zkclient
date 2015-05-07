@@ -16,7 +16,10 @@
 package org.I0Itec.zkclient;
 
 import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -152,5 +155,17 @@ public class ZkConnection implements IZkConnection {
     @Override
     public void addAuthInfo(String scheme, byte[] auth) {
         _zk.addAuthInfo(scheme, auth);
+    }
+
+    @Override
+    public void setAcl(String path, List<ACL> acl, int version) throws KeeperException, InterruptedException {
+        _zk.setACL(path, acl, version);
+    }
+
+    @Override
+    public Map.Entry<List<ACL>, Stat> getAcl(String path) throws KeeperException, InterruptedException {
+        Stat stat = new Stat();
+        List<ACL> acl = _zk.getACL(path, stat);
+        return new SimpleEntry(acl, stat);
     }
 }

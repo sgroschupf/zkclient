@@ -17,11 +17,15 @@
  */
 package org.I0Itec.zkclient;
 
+import junit.framework.Assert;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
 
 public class ZkAuthTest extends AbstractAuthTest {
     @Override
@@ -45,5 +49,16 @@ public class ZkAuthTest extends AbstractAuthTest {
         _client.addAuthInfo("digest", "pat:pass".getBytes());
         _client.create("/path1", null, ZooDefs.Ids.CREATOR_ALL_ACL, CreateMode.PERSISTENT);
         _client.readData("/path1");
+    }
+
+    @Test
+    public void testSetAndGetAcls() {
+        _client.addAuthInfo("digest", "pat:pass".getBytes());
+
+        _client.create("/path1", null, ZooDefs.Ids.CREATOR_ALL_ACL, CreateMode.PERSISTENT);
+        Assert.assertEquals(_client.getAcl("path1").getKey(), ZooDefs.Ids.CREATOR_ALL_ACL);
+
+        _client.setAcl("/path1", ZooDefs.Ids.READ_ACL_UNSAFE);
+        Assert.assertEquals(_client.getAcl("path1").getKey(), ZooDefs.Ids.READ_ACL_UNSAFE);
     }
 }

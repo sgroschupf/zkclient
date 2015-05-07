@@ -16,6 +16,7 @@
 package org.I0Itec.zkclient;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -57,4 +58,8 @@ public interface IZkConnection {
     public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException;
 
     public void addAuthInfo(String scheme, byte[] auth);
+
+    public void setAcl(final String path, List<ACL> acl, int version) throws KeeperException, InterruptedException;
+
+    public Map.Entry<List<ACL>, Stat> getAcl(final String path) throws KeeperException, InterruptedException;
 }
