@@ -3,6 +3,7 @@ CHANGELOG
 
 ZkClient 0.6 (???)
 ---------------
+- Adding setAcl and getAcl methods to zkClient so users can setAcls not just during creation but after creation of node as well.
 
 
 ZkClient 0.5 (Apr, 2015)

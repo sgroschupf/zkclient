@@ -297,6 +297,69 @@ public class ZkClient implements Watcher {
     }
 
     /**
+     * Sets the acl on path
+     *
+     * @param path
+     * @param acl
+     *            List of ACL permissions to assign to the path.
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public void setAcl(final String path, final List<ACL> acl) throws ZkException {
+        if (path == null) {
+            throw new NullPointerException("Missing value for path");
+        }
+
+        if (acl == null || acl.size() == 0) {
+            throw new NullPointerException("Missing value for ACL");
+        }
+
+        if(!exists(path)) {
+            throw new RuntimeException("trying to set acls on non existing node " + path);
+        }
+
+        retryUntilConnected(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Stat stat = new Stat();
+                _connection.readData(path, stat, false);
+                _connection.setAcl(path, acl, stat.getAversion());
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Gets the acl on path
+     *
+     * @param path
+     * @return an entry instance with key = list of acls on node and value = stats.
+     * @throws ZkException
+     *             if any ZooKeeper exception occurred
+     * @throws RuntimeException
+     *             if any other exception occurs
+     */
+    public Map.Entry<List<ACL>, Stat> getAcl(final String path) throws ZkException {
+        if (path == null) {
+            throw new NullPointerException("Missing value for path");
+        }
+
+        if(!exists(path)) {
+            throw new RuntimeException("trying to get acls on non existing node " + path);
+        }
+
+        return retryUntilConnected(new Callable<Map.Entry<List<ACL>, Stat>>() {
+            @Override
+            public Map.Entry<List<ACL>, Stat> call() throws Exception {
+                return _connection.getAcl(path);
+            }
+        });
+    }
+
+
+    /**
      * Create a persistent node.
      * 
      * @param path

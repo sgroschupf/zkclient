@@ -116,7 +116,7 @@ public class ContentWatcherTest {
         LOG.info("--- testHandlingOfConnectionLoss");
         final Gateway gateway = new Gateway(4712, 4711);
         gateway.start();
-        final ZkClient zkClient = new ZkClient("localhost:4712", 5000);
+        final ZkClient zkClient = new ZkClient("localhost:4712", 30000);
 
         // disconnect
         gateway.stop();

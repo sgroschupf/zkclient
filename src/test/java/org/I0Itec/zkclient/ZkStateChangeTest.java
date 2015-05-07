@@ -3,6 +3,7 @@ package org.I0Itec.zkclient;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -190,6 +191,16 @@ public class ZkStateChangeTest {
         @Override
         public void addAuthInfo(String scheme, byte[] auth) {
             throw new RuntimeException("not implemented");
+        }
+
+        @Override
+        public void setAcl(String path, List<ACL> acl, int version) throws KeeperException, InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map.Entry<List<ACL>, Stat> getAcl(String path) throws KeeperException, InterruptedException {
+            throw new UnsupportedOperationException();
         }
     }
 

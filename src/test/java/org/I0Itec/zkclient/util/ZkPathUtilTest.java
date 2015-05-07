@@ -28,7 +28,7 @@ public class ZkPathUtilTest extends TestCase {
 
     public void testToString() throws Exception {
         _zkServer = TestUtil.startZkServer("ZkPathUtilTest", 4711);
-        _client = new ZkClient("localhost:4711", 5000);
+        _client = new ZkClient("localhost:4711", 30000);
         final String file1 = "/files/file1";
         final String file2 = "/files/file2";
         final String file3 = "/files/file2/file3";
