@@ -15,12 +15,7 @@
  */
 package org.I0Itec.zkclient;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -380,6 +375,42 @@ public class InMemoryConnection implements IZkConnection {
     @Override
     public void addAuthInfo(String scheme, byte[] auth) {
         _ids.add(new Id(scheme, new String(auth)));
+    }
+
+    @Override
+    public void setAcl(String path, List<ACL> acl, int version) throws KeeperException, InterruptedException {
+        if (!exists(path, false)) {
+            throw new KeeperException.NoNodeException();
+        }
+
+        DataAndVersion dataAndVersion = _data.get(path);
+        if(version != dataAndVersion._version) {
+            throw new KeeperException.BadVersionException();
+        }
+
+        checkACL(path, ZooDefs.Perms.ADMIN);
+
+        _lock.lock();
+        try {
+            _data.put(path, new DataAndVersion(dataAndVersion.getData(), dataAndVersion.getVersion() + 1, acl));
+        } finally {
+            _lock.unlock();
+        }
+    }
+
+    @Override
+    public Map.Entry<List<ACL>, Stat> getAcl(String path) throws KeeperException, InterruptedException {
+        if (!exists(path, false)) {
+            throw new KeeperException.NoNodeException();
+        }
+
+        DataAndVersion dataAndVersion = _data.get(path);
+
+        Stat stat = new Stat();
+        stat.setVersion(dataAndVersion.getVersion());
+        stat.setCtime(_creationTime.get(path));
+
+        return new AbstractMap.SimpleEntry<List<ACL>, Stat>(dataAndVersion.getAcl(), stat);
     }
 
     /***
