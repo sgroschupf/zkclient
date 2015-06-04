@@ -38,7 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ServerZkClientTest extends AbstractBaseZkClientTest {
-	private static final int CONNECTION_TIMEOUT = 15000;
+	private static final int CONNECTION_TIMEOUT = 30000;
     private AtomicInteger _counter = new AtomicInteger();
 
     @Override
@@ -87,7 +87,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
 
     @Test(timeout = 10000)
     public void testReadWithTimeout() throws Exception {
-        final ZkClient zkClient = new ZkClient("localhost:4711", 5000, 5000, new SerializableSerializer(), 5000);
+        final ZkClient zkClient = new ZkClient("localhost:4711", 5000, CONNECTION_TIMEOUT, new SerializableSerializer(), 5000);
         // shutdown the server
         LOG.info("Shutting down zookeeper server " + _zkServer);
         _zkServer.shutdown();
@@ -102,9 +102,9 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 30000)
     public void testRetryWithTimeout() throws Exception {
-        final ZkClient zkClient = new ZkClient("localhost:4711", 2000, 2000, new SerializableSerializer(), 5000);
+        final ZkClient zkClient = new ZkClient("localhost:4711", CONNECTION_TIMEOUT, CONNECTION_TIMEOUT, new SerializableSerializer(), 5000);
         // shutdown the server
         LOG.info("Shutting down zookeeper server " + _zkServer);
         _zkServer.shutdown();
@@ -207,7 +207,7 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
             public Boolean call() throws Exception {
                 return children.get() != null && children.get().size() == 1;
             }
-        }, TimeUnit.SECONDS, 5);
+        }, TimeUnit.SECONDS, 30);
 
         assertTrue(hasOneChild);
 

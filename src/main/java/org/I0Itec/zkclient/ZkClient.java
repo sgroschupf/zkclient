@@ -354,39 +354,6 @@ public class ZkClient implements Watcher {
         });
     }
 
-    /**
-     * Create a persistent node and set its ACLs.
-     *
-     * @param path
-     * @param acl
-     *            List of ACL permissions to assign to the node
-     * @throws ZkException
-     *             if any ZooKeeper exception occurred
-     * @throws RuntimeException
-     *             if any other exception occurs
-     */
-    public void addAcl(final String path, final List<ACL> acl) throws ZkException {
-        if (path == null) {
-            throw new NullPointerException("Missing value for path");
-        }
-
-        if (acl == null || acl.size() == 0) {
-            throw new NullPointerException("Missing value for ACL");
-        }
-
-        if(!exists(path)) {
-            throw new RuntimeException("trying to set acls on non existing node " + path);
-        }
-
-        retryUntilConnected(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                int version = _connection.getAcl(path).getValue().getVersion();
-                _connection.setAcl(path, acl, version);
-                return null;
-            }
-        });
-    }
 
     /**
      * Create a persistent node.
