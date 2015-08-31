@@ -32,8 +32,8 @@ Howto release ZkClient as maven artifact
 - check the artifacts and if everything is ok, release the repository (on the same page)
 - syncing to central maven repository will then be activated (might take around 2h)
 - tag with 
-	git tag -a <releaseVersion>
-	git  push  --tags
+	git tag -a <releaseVersion> -m "Tag for <releaseVersion> release"
+	git push --tags
 - set version in build.gradle to the next dev version (e.g 0.5 to 0.6-dev) and commit
 
 
