@@ -1,7 +1,12 @@
 CHANGELOG
 =====
 
-ZkClient 0.6 (???)
+ZkClient 0.7 (???)
+---------------
+- 
+
+
+ZkClient 0.6 (Aug 2015)
 ---------------
 - Adding setAcl and getAcl methods to zkClient so users can setAcls not just during creation but after creation of node as well.
 - Upgrade to Zookeeper 3.4.6 (from 3.4.3)
