@@ -63,7 +63,7 @@ public class SaslAuthenticatedTest {
         System.setProperty(JAVA_LOGIN_CONFIG_PARAM, jaasFileName);
         System.setProperty(ZK_AUTH_PROVIDER, "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
         _zkServer = TestUtil.startZkServer("ZkClientTest", 4711);
-        _client = new ZkClient(new ZkConnection("localhost:4711", 6000), 6000, true);
+        _client = new ZkClient(new ZkConnection("localhost:4711", 6000), 6000);
     }
 
     @After
