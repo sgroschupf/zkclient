@@ -118,10 +118,18 @@ public class ZkClient implements Watcher {
         this(connection, connectionTimeout, new SerializableSerializer());
     }
 
+    public ZkClient(IZkConnection connection, int connectionTimeout, boolean isSaslAuthenticated) {
+        this(connection, connectionTimeout, new SerializableSerializer(), isSaslAuthenticated);
+    }
+    
     public ZkClient(IZkConnection zkConnection, int connectionTimeout, ZkSerializer zkSerializer) {
         this(zkConnection, connectionTimeout, zkSerializer, -1);
     }
 
+    public ZkClient(IZkConnection zkConnection, int connectionTimeout, ZkSerializer zkSerializer, boolean isSaslAuthenticated) {
+        this(zkConnection, connectionTimeout, zkSerializer, -1, isSaslAuthenticated);
+    }
+    
     /**
      * 
      * @param zkConnection
@@ -138,13 +146,34 @@ public class ZkClient implements Watcher {
      *            "retry forever until a connection has been reestablished".
      */
     public ZkClient(final IZkConnection zkConnection, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout) {
+        this(zkConnection, connectionTimeout, zkSerializer, operationRetryTimeout, false);
+    }
+    
+    /**
+     * 
+     * @param zkConnection
+     *            The Zookeeper servers
+     * @param connectionTimeout
+     *            The connection timeout in milli seconds
+     * @param zkSerializer
+     *            The Zookeeper data serializer
+     * @param operationRetryTimeout
+     *            Most operations done through this {@link org.I0Itec.zkclient.ZkClient} are retried in cases like
+     *            connection loss with the Zookeeper servers. During such failures, this
+     *            <code>operationRetryTimeout</code> decides the maximum amount of time, in milli seconds, each
+     *            operation is retried. A value lesser than 0 is considered as
+     *            "retry forever until a connection has been reestablished".
+     * @param isSaslAuthenticated
+     *            Waits on the SaslAuthenticated event instead of the SyncConnected event from ZooKeeper.
+     */
+    public ZkClient(final IZkConnection zkConnection, final int connectionTimeout, final ZkSerializer zkSerializer, final long operationRetryTimeout, boolean isSaslAuthenticated) {
         if (zkConnection == null) {
             throw new NullPointerException("Zookeeper connection is null!");
         }
         _connection = zkConnection;
         _zkSerializer = zkSerializer;
         this.operationRetryTimeoutInMillis = operationRetryTimeout;
-        connect(connectionTimeout, this);
+        connect(connectionTimeout, this, isSaslAuthenticated);
     }
 
     public void setZkSerializer(ZkSerializer zkSerializer) {
@@ -886,6 +915,10 @@ public class ZkClient implements Watcher {
         return waitForKeeperState(KeeperState.SyncConnected, time, timeUnit);
     }
 
+    public boolean waitUntilConnectedWithSasl(long time, TimeUnit timeUnit) throws ZkInterruptedException {
+        return waitForKeeperState(KeeperState.SaslAuthenticated, time, timeUnit);
+    }
+    
     public boolean waitForKeeperState(KeeperState keeperState, long time, TimeUnit timeUnit) throws ZkInterruptedException {
         if (_zookeeperEventThread != null && Thread.currentThread() == _zookeeperEventThread) {
             throw new IllegalArgumentException("Must not be done in the zookeeper event thread.");
@@ -1170,6 +1203,23 @@ public class ZkClient implements Watcher {
      *             if the connection timed out due to thread interruption
      */
     public void connect(final long maxMsToWaitUntilConnected, Watcher watcher) throws ZkInterruptedException, ZkTimeoutException, IllegalStateException {
+        connect(maxMsToWaitUntilConnected, watcher, false);
+    }
+    
+    /**
+     * Connect to ZooKeeper.
+     * 
+     * @param maxMsToWaitUntilConnected
+     * @param watcher
+     * @param isSaslAuthenticated
+     * @throws ZkInterruptedException
+     *             if the connection timed out due to thread interruption
+     * @throws ZkTimeoutException
+     *             if the connection timed out
+     * @throws IllegalStateException
+     *             if the connection timed out due to thread interruption
+     */
+    public void connect(final long maxMsToWaitUntilConnected, Watcher watcher, boolean isSaslAuthenticated) throws ZkInterruptedException, ZkTimeoutException, IllegalStateException {
         boolean started = false;
         acquireEventLock();
         try {
@@ -1179,7 +1229,13 @@ public class ZkClient implements Watcher {
             _connection.connect(watcher);
 
             LOG.debug("Awaiting connection to Zookeeper server");
-            if (!waitUntilConnected(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS)) {
+            boolean waitSuccessful = false;
+            if(isSaslAuthenticated) {
+                waitSuccessful = waitUntilConnectedWithSasl(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS);
+            } else {
+                waitSuccessful = waitUntilConnected(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS);
+            }
+            if (!waitSuccessful) {
                 throw new ZkTimeoutException("Unable to connect to zookeeper server within timeout: " + maxMsToWaitUntilConnected);
             }
             started = true;
