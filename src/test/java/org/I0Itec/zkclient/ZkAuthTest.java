@@ -17,15 +17,13 @@
  */
 package org.I0Itec.zkclient;
 
-import junit.framework.Assert;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
 
 public class ZkAuthTest extends AbstractAuthTest {
     @Override
