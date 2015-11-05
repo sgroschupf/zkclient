@@ -86,9 +86,14 @@ public class ZkServer {
             }
         }
         LOG.info("Starting ZkServer on: [" + names + "] port " + _port + "...");
-        startZooKeeperServer();
-        _zkClient = new ZkClient("localhost:" + _port, 10000);
-        _defaultNameSpace.createDefaultNameSpace(_zkClient);
+        try {
+            startZooKeeperServer();
+            _zkClient = new ZkClient("localhost:" + _port, 10000);
+            _defaultNameSpace.createDefaultNameSpace(_zkClient);
+        } catch (RuntimeException e) {
+            shutdown();
+            throw e;
+        }
     }
 
     private void startZooKeeperServer() {
@@ -121,6 +126,7 @@ public class ZkServer {
                 LOG.info("Start single zookeeper server...");
                 LOG.info("data dir: " + dataDir.getAbsolutePath());
                 LOG.info("data log dir: " + dataLogDir.getAbsolutePath());
+                LOG.info("JAAS login file: " + System.getProperty("java.security.auth.login.config", "none"));
                 startSingleZkServer(_tickTime, dataDir, dataLogDir, port);
             } else {
                 throw new IllegalStateException("Zookeeper port " + port + " was already in use. Running in single machine mode?");
@@ -147,7 +153,9 @@ public class ZkServer {
     public void shutdown() {
         LOG.info("Shutting down ZkServer...");
         try {
-            _zkClient.close();
+            if(_zkClient != null) {
+                _zkClient.close();
+            }
         } catch (ZkException e) {
             LOG.warn("Error on closing zkclient: " + e.getClass().getName());
         }
