@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
+import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
@@ -78,6 +80,7 @@ public class ZkClient implements Watcher {
     private Thread _zookeeperEventThread;
     private ZkSerializer _zkSerializer;
     private volatile boolean _closed;
+    private boolean _isZkSaslEnabled;
 
     public ZkClient(String serverstring) {
         this(serverstring, Integer.MAX_VALUE);
@@ -150,6 +153,7 @@ public class ZkClient implements Watcher {
         _connection = zkConnection;
         _zkSerializer = zkSerializer;
         this.operationRetryTimeoutInMillis = operationRetryTimeout;
+        _isZkSaslEnabled = isZkSaslEnabled();
         connect(connectionTimeout, this);
     }
 
@@ -917,7 +921,7 @@ public class ZkClient implements Watcher {
     }
 
     public boolean waitUntilConnected(long time, TimeUnit timeUnit) throws ZkInterruptedException {
-        if (isZkSaslEnabled()) {
+        if (_isZkSaslEnabled) {
             return waitForKeeperState(KeeperState.SaslAuthenticated, time, timeUnit);
         } else {
             return waitForKeeperState(KeeperState.SyncConnected, time, timeUnit);
