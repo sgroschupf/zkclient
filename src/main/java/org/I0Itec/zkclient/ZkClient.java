@@ -889,8 +889,14 @@ public class ZkClient implements Watcher {
         boolean zkSaslEnabled = Boolean.parseBoolean(System.getProperty(ZK_SASL_CLIENT, "true"));
         String zkLoginContextName = System.getProperty(ZK_LOGIN_CONTEXT_NAME_KEY, "Client");
 
+        if(!zkSaslEnabled) {
+            LOG.warn("Client SASL has been explicitly disabled with " + ZK_SASL_CLIENT);
+            return false;
+        }
+
         String loginConfigFile = System.getProperty(JAVA_LOGIN_CONFIG_PARAM);
         if (loginConfigFile != null && loginConfigFile.length() > 0) {
+            LOG.info("JAAS File name: " + loginConfigFile);
             File configFile = new File(loginConfigFile);
             if (!configFile.canRead()) {
                 throw new IllegalArgumentException("File " + loginConfigFile + "cannot be read.");
@@ -902,14 +908,7 @@ public class ZkClient implements Watcher {
             } catch (Exception e) {
                 throw new ZkException(e);
             }
-            if (isSecurityEnabled && !zkSaslEnabled) {
-                LOG.error("JAAS file is present, but system property " + 
-                            ZK_SASL_CLIENT + " is set to false, which disables " +
-                            "SASL in the ZooKeeper client");
-                throw new IllegalArgumentException("Exception while determining if ZooKeeper is secure");
-            }
         }
-        LOG.info("Is security enabled: " + isSecurityEnabled);
         return isSecurityEnabled;
     }
 
