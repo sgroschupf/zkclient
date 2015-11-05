@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
