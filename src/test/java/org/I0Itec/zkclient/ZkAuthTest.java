@@ -18,7 +18,6 @@
 package org.I0Itec.zkclient;
 
 import junit.framework.Assert;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;

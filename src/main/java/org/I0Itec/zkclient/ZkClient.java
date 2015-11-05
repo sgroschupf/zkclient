@@ -124,11 +124,11 @@ public class ZkClient implements Watcher {
     public ZkClient(IZkConnection connection, int connectionTimeout) {
         this(connection, connectionTimeout, new SerializableSerializer());
     }
-    
+
     public ZkClient(IZkConnection zkConnection, int connectionTimeout, ZkSerializer zkSerializer) {
         this(zkConnection, connectionTimeout, zkSerializer, -1);
     }
-    
+
     /**
      * 
      * @param zkConnection
