@@ -17,15 +17,13 @@
  */
 package org.I0Itec.zkclient;
 
-import junit.framework.Assert;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
 
 public class ZkAuthTest extends AbstractAuthTest {
     @Override
@@ -40,7 +38,7 @@ public class ZkAuthTest extends AbstractAuthTest {
     @After
     public void tearDown() throws Exception {
         super.tearDown();
-        if(_client != null) {
+        if (_client != null) {
             _client.close();
         }
         _zkServer.shutdown();
@@ -58,11 +56,11 @@ public class ZkAuthTest extends AbstractAuthTest {
         _client.addAuthInfo("digest", "pat:pass".getBytes());
 
         _client.create("/path1", null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        Assert.assertEquals(ZooDefs.Ids.OPEN_ACL_UNSAFE, _client.getAcl("/path1").getKey());
+        assertThat(_client.getAcl("/path1").getKey()).isEqualTo(ZooDefs.Ids.OPEN_ACL_UNSAFE);
 
-        for(int i=0 ; i<100;i++) {
+        for (int i = 0; i < 100; i++) {
             _client.setAcl("/path1", ZooDefs.Ids.OPEN_ACL_UNSAFE);
-            Assert.assertEquals(ZooDefs.Ids.OPEN_ACL_UNSAFE, _client.getAcl("/path1").getKey());
+            assertThat(_client.getAcl("/path1").getKey()).isEqualTo(ZooDefs.Ids.OPEN_ACL_UNSAFE);
         }
     }
 }

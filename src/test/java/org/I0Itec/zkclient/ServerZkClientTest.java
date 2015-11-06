@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
@@ -36,17 +35,22 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class ServerZkClientTest extends AbstractBaseZkClientTest {
-	private static final int CONNECTION_TIMEOUT = 30000;
-    private AtomicInteger _counter = new AtomicInteger();
+
+    private static final int CONNECTION_TIMEOUT = 30000;
+
+    @Rule
+    public TemporaryFolder _temporaryFolder = new TemporaryFolder();
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        _zkServer = TestUtil.startZkServer("ZkClientTest_" + _counter.addAndGet(1), 4711);
+        _zkServer = TestUtil.startZkServer(_temporaryFolder, 4711);
         _client = new ZkClient("localhost:4711", CONNECTION_TIMEOUT);
     }
 

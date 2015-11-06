@@ -17,10 +17,10 @@
  */
 package org.I0Itec.zkclient;
 
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.Assert;
 
 import org.I0Itec.zkclient.exception.ZkException;
 import org.apache.log4j.Logger;
@@ -57,12 +57,12 @@ public abstract class AbstractAuthTest {
             _client.create("/path1", null, acl, CreateMode.EPHEMERAL);
             _client.addAuthInfo("digest", "pat:pass2".getBytes());
             _client.readData("/path1");
-            Assert.fail("Should get auth error");
+            fail("Should get auth error");
         } catch (ZkException e) {
             if (e.getCause() instanceof KeeperException && ((KeeperException) e.getCause()).code() == KeeperException.Code.NOAUTH) {
                 // do nothing, this is expected
             } else {
-                Assert.fail("wrong exception");
+                fail("wrong exception");
             }
         }
     }

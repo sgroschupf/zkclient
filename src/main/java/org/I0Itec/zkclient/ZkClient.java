@@ -15,6 +15,7 @@
  */
 package org.I0Itec.zkclient;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
@@ -26,6 +27,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+
+import javax.security.auth.login.Configuration;
 
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
@@ -58,6 +61,9 @@ import org.apache.zookeeper.data.Stat;
 public class ZkClient implements Watcher {
 
     private final static Logger LOG = Logger.getLogger(ZkClient.class);
+    protected static final String JAVA_LOGIN_CONFIG_PARAM = "java.security.auth.login.config";
+    protected static final String ZK_SASL_CLIENT = "zookeeper.sasl.client";
+    protected static final String ZK_LOGIN_CONTEXT_NAME_KEY = "zookeeper.sasl.clientconfig";
 
     protected final IZkConnection _connection;
     protected final long operationRetryTimeoutInMillis;
@@ -72,6 +78,7 @@ public class ZkClient implements Watcher {
     private Thread _zookeeperEventThread;
     private ZkSerializer _zkSerializer;
     private volatile boolean _closed;
+    private boolean _isZkSaslEnabled;
 
     public ZkClient(String serverstring) {
         this(serverstring, Integer.MAX_VALUE);
@@ -144,6 +151,7 @@ public class ZkClient implements Watcher {
         _connection = zkConnection;
         _zkSerializer = zkSerializer;
         this.operationRetryTimeoutInMillis = operationRetryTimeout;
+        _isZkSaslEnabled = isZkSaslEnabled();
         connect(connectionTimeout, this);
     }
 
@@ -316,7 +324,7 @@ public class ZkClient implements Watcher {
             throw new NullPointerException("Missing value for ACL");
         }
 
-        if(!exists(path)) {
+        if (!exists(path)) {
             throw new RuntimeException("trying to set acls on non existing node " + path);
         }
 
@@ -346,7 +354,7 @@ public class ZkClient implements Watcher {
             throw new NullPointerException("Missing value for path");
         }
 
-        if(!exists(path)) {
+        if (!exists(path)) {
             throw new RuntimeException("trying to get acls on non existing node " + path);
         }
 
@@ -357,7 +365,6 @@ public class ZkClient implements Watcher {
             }
         });
     }
-
 
     /**
      * Create a persistent node.
@@ -878,12 +885,44 @@ public class ZkClient implements Watcher {
         }
     }
 
+    private boolean isZkSaslEnabled() {
+        boolean isSecurityEnabled = false;
+        boolean zkSaslEnabled = Boolean.parseBoolean(System.getProperty(ZK_SASL_CLIENT, "true"));
+        String zkLoginContextName = System.getProperty(ZK_LOGIN_CONTEXT_NAME_KEY, "Client");
+
+        if (!zkSaslEnabled) {
+            LOG.warn("Client SASL has been explicitly disabled with " + ZK_SASL_CLIENT);
+            return false;
+        }
+
+        String loginConfigFile = System.getProperty(JAVA_LOGIN_CONFIG_PARAM);
+        if (loginConfigFile != null && loginConfigFile.length() > 0) {
+            LOG.info("JAAS File name: " + loginConfigFile);
+            File configFile = new File(loginConfigFile);
+            if (!configFile.canRead()) {
+                throw new IllegalArgumentException("File " + loginConfigFile + "cannot be read.");
+            }
+
+            try {
+                Configuration loginConf = Configuration.getConfiguration();
+                isSecurityEnabled = loginConf.getAppConfigurationEntry(zkLoginContextName) != null;
+            } catch (Exception e) {
+                throw new ZkException(e);
+            }
+        }
+        return isSecurityEnabled;
+    }
+
     public void waitUntilConnected() throws ZkInterruptedException {
         waitUntilConnected(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     public boolean waitUntilConnected(long time, TimeUnit timeUnit) throws ZkInterruptedException {
-        return waitForKeeperState(KeeperState.SyncConnected, time, timeUnit);
+        if (_isZkSaslEnabled) {
+            return waitForKeeperState(KeeperState.SaslAuthenticated, time, timeUnit);
+        } else {
+            return waitForKeeperState(KeeperState.SyncConnected, time, timeUnit);
+        }
     }
 
     public boolean waitForKeeperState(KeeperState keeperState, long time, TimeUnit timeUnit) throws ZkInterruptedException {
@@ -892,7 +931,7 @@ public class ZkClient implements Watcher {
         }
         Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
 
-        LOG.debug("Waiting for keeper state " + keeperState);
+        LOG.info("Waiting for keeper state " + keeperState);
         acquireEventLock();
         try {
             boolean stillWaiting = true;
@@ -1179,7 +1218,8 @@ public class ZkClient implements Watcher {
             _connection.connect(watcher);
 
             LOG.debug("Awaiting connection to Zookeeper server");
-            if (!waitUntilConnected(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS)) {
+            boolean waitSuccessful = waitUntilConnected(maxMsToWaitUntilConnected, TimeUnit.MILLISECONDS);
+            if (!waitSuccessful) {
                 throw new ZkTimeoutException("Unable to connect to zookeeper server within timeout: " + maxMsToWaitUntilConnected);
             }
             started = true;
