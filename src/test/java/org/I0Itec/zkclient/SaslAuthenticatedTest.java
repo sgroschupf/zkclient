@@ -151,7 +151,7 @@ public class SaslAuthenticatedTest {
             bootstrapWithAuthFailure();
             fail("Expected to fail!");
         } catch (ZkException e) {
-            assertThat(e).isInstanceOf(ZkTimeoutException.class);
+            assertThat(e).isInstanceOf(ZkAuthFailedException.class);
         } finally {
             System.clearProperty(ZK_ALLOW_FAILED_SASL);
         }

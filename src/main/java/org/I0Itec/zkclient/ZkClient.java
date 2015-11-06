@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.Configuration;
 
 import org.I0Itec.zkclient.ZkEventThread.ZkEvent;
+import org.I0Itec.zkclient.exception.ZkAuthFailedException;
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
@@ -942,7 +943,7 @@ public class ZkClient implements Watcher {
                 stillWaiting = getEventLock().getStateChangedCondition().awaitUntil(timeout);
                 // Throw an exception in the case authorization fails
                 if (_currentState == KeeperState.AuthFailed) {
-                    throw new ZkException("Authentication failure");
+                    throw new ZkAuthFailedException("Authentication failure");
                 }
             }
             LOG.debug("State is " + _currentState);
