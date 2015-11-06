@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import javax.security.auth.login.Configuration;
 
+import org.I0Itec.zkclient.exception.ZkAuthFailedException;
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.log4j.Logger;
@@ -154,6 +155,30 @@ public class SaslAuthenticatedTest {
         } finally {
             System.clearProperty(ZK_ALLOW_FAILED_SASL);
         }
+    }
+    
+    /**
+     * Tests that an unauthenticated client can execute operations.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testUnauthenticatedClient() throws IOException {
+        ZkClient unauthed = null;
+
+        try {
+            bootstrap();
+            System.clearProperty(ZkClient.JAVA_LOGIN_CONFIG_PARAM);
+            System.setProperty("zookeeper.sasl.client", "false");
+            unauthed = new ZkClient("localhost:" + _port, 6000);
+            unauthed.createPersistent("/test", new byte[0], Ids.OPEN_ACL_UNSAFE);
+        } catch (ZkException e) {
+            assertThat(e).isInstanceOf(ZkAuthFailedException.class);
+        } finally {
+            if (unauthed != null) {
+                unauthed.close();
+            }
+        }     
     }
 
     /**
