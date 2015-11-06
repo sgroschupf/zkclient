@@ -941,6 +941,10 @@ public class ZkClient implements Watcher {
                     return false;
                 }
                 stillWaiting = getEventLock().getStateChangedCondition().awaitUntil(timeout);
+                // Throw an exception in the case authorization fails
+                if (_currentState == KeeperState.AuthFailed) {
+                    throw new ZkException("Authentication failure");
+                }
             }
             LOG.debug("State is " + _currentState);
             return true;

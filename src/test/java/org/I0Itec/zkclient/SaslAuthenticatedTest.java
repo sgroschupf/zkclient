@@ -141,6 +141,25 @@ public class SaslAuthenticatedTest {
         }
     }
 
+    @Test
+    public void testUnauthenticatedClient(){
+        ZkClient unauthed = null;
+
+        try {
+            bootstrap();
+            System.clearProperty(JAVA_LOGIN_CONFIG_PARAM);
+            System.setProperty("zookeeper.sasl.client", "false");
+            unauthed = new ZkClient("localhost:" + _port, 6000);
+            unauthed.createPersistent("/test", new byte[0], Ids.OPEN_ACL_UNSAFE);
+        } catch (IOException e) {
+            Assert.fail(e.getMessage());
+        } finally {
+            if (unauthed != null) {
+                unauthed.close();
+            }
+        }     
+    }
+
     private void testAuthFailure() throws IOException {
         _userServerSide = "otheruser";
         String jaasFileName = createJaasFile();
