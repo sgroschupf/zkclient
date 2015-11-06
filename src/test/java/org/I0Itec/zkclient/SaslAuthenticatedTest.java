@@ -18,6 +18,9 @@
 
 package org.I0Itec.zkclient;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,20 +28,22 @@ import java.io.IOException;
 import javax.security.auth.login.Configuration;
 
 import org.I0Itec.zkclient.exception.ZkException;
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.Assert;
+import org.junit.rules.TemporaryFolder;
 
 public class SaslAuthenticatedTest {
     protected static final Logger LOG = Logger.getLogger(SaslAuthenticatedTest.class);
-    static final String JAVA_LOGIN_CONFIG_PARAM = "java.security.auth.login.config";
     static final String ZK_AUTH_PROVIDER = "zookeeper.authProvider.1";
     static final String ZK_ALLOW_FAILED_SASL = "zookeeper.allowSaslFailedClients";
-    public static final String ZK_LOGIN_CONTEXT_NAME_KEY = "zookeeper.sasl.clientconfig";
 
+    @Rule
+    public TemporaryFolder _temporaryFolder = new TemporaryFolder();
     private int _port = 4700;
     private ZkClient _client;
     private ZkServer _zkServer;
@@ -52,7 +57,7 @@ public class SaslAuthenticatedTest {
     private String _zkModule = "org.apache.zookeeper.server.auth.DigestLoginModule";
 
     private String createJaasFile() throws IOException {
-        File jaasFile = File.createTempFile("jaas", "conf");
+        File jaasFile = _temporaryFolder.newFile("jaas.conf");
         FileOutputStream jaasOutputStream = new java.io.FileOutputStream(jaasFile);
         jaasOutputStream.write(String.format("%s {\n\t%s required\n", _zkServerContextName, _zkModule).getBytes());
         jaasOutputStream.write(String.format("\tuser_super=\"%s\"\n", _userSuperPasswd).getBytes());
@@ -61,116 +66,109 @@ public class SaslAuthenticatedTest {
         jaasOutputStream.write(String.format("\tusername=\"%s\"\n", _userClientSide).getBytes());
         jaasOutputStream.write(String.format("\tpassword=\"%s\";\n};", _userClientSidePasswd).getBytes());
         jaasOutputStream.close();
-        jaasFile.deleteOnExit();
         return jaasFile.getAbsolutePath();
     }
 
     @Before
     public void setUp() throws IOException {
-        System.setProperty(ZK_AUTH_PROVIDER, "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
-
         // Reset all variables used for the jaas login file
-        this._zkServerContextName = "Server";
-        this._zkClientContextName = "Client";
-        this._userSuperPasswd = "adminpasswd";
-        this._userServerSide = "fpj";
-        this._userClientSide = "fpj";
-        this._userServerSidePasswd = "fpjsecret";
-        this._userClientSidePasswd = "fpjsecret";
-        this._zkModule = "org.apache.zookeeper.server.auth.DigestLoginModule";
+        _zkServerContextName = "Server";
+        _zkClientContextName = "Client";
+        _userSuperPasswd = "adminpasswd";
+        _userServerSide = "fpj";
+        _userClientSide = "fpj";
+        _userServerSidePasswd = "fpjsecret";
+        _userClientSidePasswd = "fpjsecret";
+        _zkModule = "org.apache.zookeeper.server.auth.DigestLoginModule";
     }
 
     @After
     public void tearDown() {
-        if(_zkServer != null) {
+        if (_client != null) {
+            _client.close();
+        }
+        if (_zkServer != null) {
             _zkServer.shutdown();
         }
         System.clearProperty(ZK_AUTH_PROVIDER);
-        System.clearProperty(JAVA_LOGIN_CONFIG_PARAM);
+        System.clearProperty(ZkClient.JAVA_LOGIN_CONFIG_PARAM);
+        Configuration.setConfiguration(null);
     }
 
     private void bootstrap() throws IOException {
         Configuration.setConfiguration(null);
         String jaasFileName = createJaasFile();
-        System.setProperty(JAVA_LOGIN_CONFIG_PARAM, jaasFileName);
-        _zkServer = TestUtil.startZkServer("ZkClientTest", _port);
+        System.setProperty(ZK_AUTH_PROVIDER, "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
+        System.setProperty(ZkClient.JAVA_LOGIN_CONFIG_PARAM, jaasFileName);
+        _zkServer = TestUtil.startZkServer(_temporaryFolder, _port);
         _client = _zkServer.getZkClient();
+    }
+
+    private void bootstrapWithAuthFailure() throws IOException {
+        _userServerSide = "otheruser";
+        bootstrap();
     }
 
     /**
      * Tests that a connection authenticates successfully.
+     * 
+     * @throws IOException
      */
     @Test
-    public void testConnection() {
+    public void testConnection() throws IOException {
+        bootstrap();
+        _client.createPersistent("/test", new byte[0], Ids.CREATOR_ALL_ACL);
+        assertThat(_client.exists("/test")).isTrue();
+    }
+
+    /**
+     * Tests that ZkClient throws an exception in the case ZooKeeper keeps dropping the connection due to authentication
+     * failures.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void testAuthFailure() throws IOException {
         try {
-            bootstrap();
-            _client.createPersistent("/test", new byte[0], Ids.CREATOR_ALL_ACL);
-            Assert.assertTrue(_client.exists("/test"));
-        } catch (IOException e) {
-            Assert.fail(e.getMessage());
+            bootstrapWithAuthFailure();
+            fail("Expected to fail!");
+        } catch (ZkException e) {
+            assertThat(e).isInstanceOf(ZkTimeoutException.class);
         }
     }
 
     /**
-     * Tests that ZkClient spots the AuthFailed event in the
-     * case the property to allow failed SASL connections is
+     * Tests that ZkClient spots the AuthFailed event in the case the property to allow failed SASL connections is
      * enabled.
+     * 
+     * @throws IOException
      */
     @Test
-    public void testAuthFailureFailedSasl() {
+    public void testAuthFailure_AllowFailedSasl() throws IOException {
         System.setProperty(ZK_ALLOW_FAILED_SASL, "true");
         try {
-            testAuthFailure();
-        } catch (IOException e) {
-            Assert.fail(e.getMessage());
+            bootstrapWithAuthFailure();
+            fail("Expected to fail!");
+        } catch (ZkException e) {
+            assertThat(e).isInstanceOf(ZkTimeoutException.class);
         } finally {
             System.clearProperty(ZK_ALLOW_FAILED_SASL);
         }
     }
 
     /**
-     * Tests that ZkClient throws an exception in the case ZooKeeper
-     * keeps dropping the connection due to authentication failures.
+     * Tests that ZkClient spots the AuthFailed event in the case the property to allow failed SASL connections is
+     * enabled.
+     * 
+     * @throws IOException
      */
     @Test
-    public void testAuthFailureDisconnect() {
+    public void testAuthFailure_DisabledSasl() throws IOException {
+        System.setProperty(ZkClient.ZK_SASL_CLIENT, "false");
         try {
-            testAuthFailure();
-        } catch (IOException e) {
-            Assert.fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void testUnauthenticatedClient(){
-        ZkClient unauthed = null;
-
-        try {
-            bootstrap();
-            System.clearProperty(JAVA_LOGIN_CONFIG_PARAM);
-            System.setProperty("zookeeper.sasl.client", "false");
-            unauthed = new ZkClient("localhost:" + _port, 6000);
-            unauthed.createPersistent("/test", new byte[0], Ids.OPEN_ACL_UNSAFE);
-        } catch (IOException e) {
-            Assert.fail(e.getMessage());
+            bootstrapWithAuthFailure();
         } finally {
-            if (unauthed != null) {
-                unauthed.close();
-            }
-        }     
-    }
-
-    private void testAuthFailure() throws IOException {
-        _userServerSide = "otheruser";
-        String jaasFileName = createJaasFile();
-        System.setProperty(JAVA_LOGIN_CONFIG_PARAM, jaasFileName);
-        try {
-            bootstrap();
-            Assert.fail("Should have thrown an exception");
-        } catch (ZkException e) {
-            // expected
-        } catch (IOException e) {
-            Assert.fail(e.getMessage());
+            System.clearProperty(ZkClient.ZK_SASL_CLIENT);
         }
     }
 }

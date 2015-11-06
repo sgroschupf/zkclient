@@ -1,9 +1,9 @@
 CHANGELOG
 =====
 
-ZkClient 0.7 (???)
+ZkClient 0.7 (Nov 2015)
 ---------------
-- 
+- #38: wait on SaslAuthenticated event when SASL is enabled
 
 
 ZkClient 0.6 (Aug 2015)

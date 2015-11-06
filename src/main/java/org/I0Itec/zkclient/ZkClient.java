@@ -324,7 +324,7 @@ public class ZkClient implements Watcher {
             throw new NullPointerException("Missing value for ACL");
         }
 
-        if(!exists(path)) {
+        if (!exists(path)) {
             throw new RuntimeException("trying to set acls on non existing node " + path);
         }
 
@@ -354,7 +354,7 @@ public class ZkClient implements Watcher {
             throw new NullPointerException("Missing value for path");
         }
 
-        if(!exists(path)) {
+        if (!exists(path)) {
             throw new RuntimeException("trying to get acls on non existing node " + path);
         }
 
@@ -365,7 +365,6 @@ public class ZkClient implements Watcher {
             }
         });
     }
-
 
     /**
      * Create a persistent node.
@@ -891,7 +890,7 @@ public class ZkClient implements Watcher {
         boolean zkSaslEnabled = Boolean.parseBoolean(System.getProperty(ZK_SASL_CLIENT, "true"));
         String zkLoginContextName = System.getProperty(ZK_LOGIN_CONTEXT_NAME_KEY, "Client");
 
-        if(!zkSaslEnabled) {
+        if (!zkSaslEnabled) {
             LOG.warn("Client SASL has been explicitly disabled with " + ZK_SASL_CLIENT);
             return false;
         }
@@ -932,7 +931,7 @@ public class ZkClient implements Watcher {
         }
         Date timeout = new Date(System.currentTimeMillis() + timeUnit.toMillis(time));
 
-        LOG.debug("Waiting for keeper state " + keeperState);
+        LOG.info("Waiting for keeper state " + keeperState);
         acquireEventLock();
         try {
             boolean stillWaiting = true;

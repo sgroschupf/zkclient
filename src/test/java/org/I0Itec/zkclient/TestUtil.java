@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.exceptions.base.MockitoAssertionError;
 
 public class TestUtil {
@@ -92,11 +93,21 @@ public class TestUtil {
         } while (true);
     }
 
+    public static ZkServer startZkServer(TemporaryFolder temporaryFolder, int port) throws IOException {
+        File dataFolder = temporaryFolder.newFolder("data");
+        File logFolder = temporaryFolder.newFolder("log");
+        return startServer(port, dataFolder.getAbsolutePath(), logFolder.getAbsolutePath());
+    }
+
     public static ZkServer startZkServer(String testName, int port) throws IOException {
         String dataPath = "./build/test/" + testName + "/data";
         String logPath = "./build/test/" + testName + "/log";
         FileUtils.deleteDirectory(new File(dataPath));
         FileUtils.deleteDirectory(new File(logPath));
+        return startServer(port, dataPath, logPath);
+    }
+
+    private static ZkServer startServer(int port, String dataPath, String logPath) {
         ZkServer zkServer = new ZkServer(dataPath, logPath, mock(IDefaultNameSpace.class), port, ZkServer.DEFAULT_TICK_TIME, 100);
         zkServer.start();
         return zkServer;
