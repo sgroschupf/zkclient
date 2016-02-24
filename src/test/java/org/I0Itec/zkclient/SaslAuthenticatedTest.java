@@ -18,27 +18,27 @@
 
 package org.I0Itec.zkclient;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import javax.security.auth.login.Configuration;
-
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.login.Configuration;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 public class SaslAuthenticatedTest {
-    protected static final Logger LOG = Logger.getLogger(SaslAuthenticatedTest.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(SaslAuthenticatedTest.class);
     static final String ZK_AUTH_PROVIDER = "zookeeper.authProvider.1";
     static final String ZK_ALLOW_FAILED_SASL = "zookeeper.allowSaslFailedClients";
 

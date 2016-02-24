@@ -1,14 +1,19 @@
 apply plugin: 'java'
-apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'maven'
-apply plugin: 'signing'
-apply plugin: 'project-reports'
-apply plugin: 'osgi'
+//apply plugin: 'project-reports'
+//apply plugin: 'osgi'
 
 group = 'com.101tec'
-version = '0.8-dev'
-sourceCompatibility = 1.6
+version = '0.81'
+
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+
+[compileJava, compileTestJava].each() {
+    it.options.compilerArgs += ["-Xlint:unchecked", "-Xlint:deprecation", "-Xlint:-options"]
+    it.options.encoding = "UTF-8"
+}
 
 jar {
     manifest {
@@ -22,20 +27,17 @@ jar {
 //--------------------
 repositories {
     flatDir(dirs: 'lib')
-    // mavenCentral()
-    // maven {
-    //     url "https://oss.sonatype.org/content/repositories/com101tec-553"
-    //}
 }
+
 dependencies {
-    compile ('log4j:log4j:1.2.15') {
-        exclude group: "com.sun.jdmk", module: "jmxtools"
-        exclude group: "com.sun.jmx", module: "jmxri"
-        exclude group: "javax.jms", module: "jms"
+
+    compile ('org.apache.zookeeper:zookeeper:3.4.6'){
+        exclude(module: 'log4j')
+        exclude(module: 'slf4j-log4j12')
     }
-    compile 'org.apache.zookeeper:zookeeper:3.4.6'
-    compile 'org.slf4j:slf4j-api:1.6.1'
-    compile 'org.slf4j:slf4j-log4j12:1.6.1'
+    compile 'org.slf4j:slf4j-api:1.7.15'
+    compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.5'
+    compile 'org.apache.logging.log4j:log4j-core:2.5'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core:2.0.0'
@@ -54,87 +56,20 @@ task sourceJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
+
 task javadocJar(type: Jar, dependsOn:javadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
 }
+
 artifacts {
     archives sourceJar
     archives javadocJar
 }
-task jars(dependsOn: ['jar', 'sourceJar'], description: 'Build jar & source jar') << {}
 
-
-//--------------------
-// Eclipse Setup
-//--------------------
-eclipse {
-    classpath { defaultOutputDir = file('build-eclipse') }
-}
-
-task eclipseJdtPrepare(type: Copy) {
-    from rootProject.file('src/build/eclipse/org.eclipse.jdt.core.prefs')
-    into project.file('.settings/')
-}
-tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare)
-
-
-//--------------------
-// Maven Artifact publishing
-//--------------------
-
-signing {
-    required { gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-}
-
-
-uploadArchives {
-
-    repositories.mavenDeployer {
-        //repository(url: "file:///tmp/mavenRepo")
-        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-            authentication(userName: sonatypeUsername, password: sonatypePassword)
-        }
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-        pom.project {
-            name 'ZkClient'
-            packaging 'jar'
-            description 'A zookeeper client, that makes life a little easier.'
-            url 'https://github.com/sgroschupf/zkclient'
-            licenses {
-                license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
-                }
-            }
-            scm {
-                url 'https://github.com/sgroschupf/zkclient'
-                connection 'scm:git:git://github.com/sgroschupf/zkclient.git'
-                developerConnection 'scm:git:https://github.com/sgroschupf/zkclient.git'
-            }
-            developers {
-                developer {
-                    id 'sgroschupf'
-                    name 'Stefan Groshupf'
-                }
-                developer {
-                    id 'pvoss'
-                    name 'Peter Voss'
-                }
-                developer {
-                    id 'jzillmann'
-                    name 'Johannes Zillmann'
-                }
-            }
-        }
-    }
-}
-
+//task jars(dependsOn: ['jar', 'sourceJar'], description: 'Build jar & source jar') << {}
 
 //--------------------
 // Util methods
 //--------------------
-task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') { gradleVersion = '1.3' }
-
+//task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') { gradleVersion = '1.3' }

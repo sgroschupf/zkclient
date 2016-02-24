@@ -5,3 +5,6 @@
 .gradle
 build-eclipse
 build
+*.iml
+gradle
+*.bat

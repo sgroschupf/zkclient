@@ -15,6 +15,15 @@
  */
 package org.I0Itec.zkclient;
 
+import org.I0Itec.zkclient.exception.ZkException;
+import org.apache.zookeeper.*;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper.States;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -22,23 +31,11 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.I0Itec.zkclient.exception.ZkException;
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.Op;
-import org.apache.zookeeper.OpResult;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooKeeper.States;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
-
 public class ZkConnection implements IZkConnection {
 
-    private static final Logger LOG = Logger.getLogger(ZkConnection.class);
+    //private static final Logger LOG = Logger.getLogger(ZkConnection.class);
 
+    private static final Logger LOG = LoggerFactory.getLogger(ZkConnection.class);
     /** It is recommended to use quite large sessions timeouts for ZooKeeper. */
     private static final int DEFAULT_SESSION_TIMEOUT = 30000;
 
