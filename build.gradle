@@ -21,12 +21,10 @@ jar {
     }
 }
 
-
-//--------------------
-// Dependencies
-//--------------------
 repositories {
-    flatDir(dirs: 'lib')
+    maven {
+        url 'http://maven.oschina.net/content/groups/public/'
+    }
 }
 
 dependencies {
@@ -66,10 +64,3 @@ artifacts {
     archives sourceJar
     archives javadocJar
 }
-
-//task jars(dependsOn: ['jar', 'sourceJar'], description: 'Build jar & source jar') << {}
-
-//--------------------
-// Util methods
-//--------------------
-//task wrapper(type: Wrapper, description: 'Generate the Gradle Wrapper') { gradleVersion = '1.3' }
