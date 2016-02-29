@@ -1,7 +1,7 @@
 CHANGELOG
 =====
 
-ZkClient 0.81 (FEB,2016)
+ZkClient 0.8.1 (Feb,2016)
 ---------------
 -- Update log4j to log4j2
 

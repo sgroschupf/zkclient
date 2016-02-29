@@ -1,11 +1,9 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven'
-//apply plugin: 'project-reports'
-//apply plugin: 'osgi'
 
 group = 'com.101tec'
-version = '0.81'
+version = '0.8.1'
 
 targetCompatibility = 1.8
 sourceCompatibility = 1.8
@@ -25,6 +23,7 @@ repositories {
     maven {
         url 'http://maven.oschina.net/content/groups/public/'
     }
+    mavenCentral()
 }
 
 dependencies {
@@ -43,7 +42,7 @@ dependencies {
     testCompile 'org.mockito:mockito-core:1.8.0'
 
     //dependencies of mockito
-    testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
+    //testCompile files('lib/objenesis-1.0.jar', 'lib/hamcrest-core-1.1.jar')
 }
 
 
