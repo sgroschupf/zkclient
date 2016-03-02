@@ -15,22 +15,25 @@
  */
 package org.I0Itec.zkclient.testutil;
 
-import static org.mockito.Mockito.mock;
+import org.I0Itec.zkclient.IDefaultNameSpace;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkServer;
+import org.apache.commons.io.FileUtils;
+import org.junit.rules.ExternalResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.I0Itec.zkclient.IDefaultNameSpace;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkServer;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-import org.junit.rules.ExternalResource;
+import static org.mockito.Mockito.mock;
 
 public class ZkTestSystem extends ExternalResource {
 
-    protected static final Logger LOG = Logger.getLogger(ZkTestSystem.class);
+    //protected static final Logger LOG = Logger.getLogger(ZkTestSystem.class);
+
+    protected static final Logger LOG = LoggerFactory.getLogger(ZkTestSystem.class);
 
     private static int PORT = 10002;
     private static ZkTestSystem _instance;

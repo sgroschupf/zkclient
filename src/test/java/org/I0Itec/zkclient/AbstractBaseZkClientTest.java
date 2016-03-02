@@ -15,27 +15,28 @@
  */
 package org.I0Itec.zkclient;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
+import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.I0Itec.zkclient.exception.ZkTimeoutException;
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+
+//import org.apache.log4j.Logger;
 
 public abstract class AbstractBaseZkClientTest {
 
-    protected static final Logger LOG = Logger.getLogger(AbstractBaseZkClientTest.class);
+    //protected static final Logger LOG = Logger.getLogger(AbstractBaseZkClientTest.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(AbstractBaseZkClientTest.class);
     protected ZkServer _zkServer;
     protected ZkClient _client;
 
