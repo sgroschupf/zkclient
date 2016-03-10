@@ -1051,8 +1051,6 @@ public class ZkClient implements Watcher {
             return true;
         } catch (ZkNoNodeException e) {
             return false;
-        } catch (ZkBadVersionException e) {
-            throw e;
         }
     }
 
