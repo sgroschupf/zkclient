@@ -105,6 +105,11 @@ public class ZkConnection implements IZkConnection {
     }
 
     @Override
+    public void delete(String path, int version) throws InterruptedException, KeeperException {
+        _zk.delete(path, version);
+    }
+    
+    @Override
     public boolean exists(String path, boolean watch) throws KeeperException, InterruptedException {
         return _zk.exists(path, watch) != null;
     }

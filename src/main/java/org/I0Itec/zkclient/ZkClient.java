@@ -1034,12 +1034,16 @@ public class ZkClient implements Watcher {
     }
 
     public boolean delete(final String path) {
+        return this.delete(path, -1);
+    }
+    
+    public boolean delete(final String path, final int version) {
         try {
             retryUntilConnected(new Callable<Object>() {
 
                 @Override
                 public Object call() throws Exception {
-                    _connection.delete(path);
+                    _connection.delete(path, version);
                     return null;
                 }
             });
@@ -1047,6 +1051,8 @@ public class ZkClient implements Watcher {
             return true;
         } catch (ZkNoNodeException e) {
             return false;
+        } catch (ZkBadVersionException e) {
+            throw e;
         }
     }
 
