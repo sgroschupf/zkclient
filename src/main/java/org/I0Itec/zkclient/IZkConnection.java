@@ -38,6 +38,8 @@ public interface IZkConnection {
     public String create(String path, byte[] data, List<ACL> acl, CreateMode mode) throws KeeperException, InterruptedException;
 
     public void delete(String path) throws InterruptedException, KeeperException;
+    
+    public void delete(String path, int version) throws InterruptedException, KeeperException;
 
     boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException;
 

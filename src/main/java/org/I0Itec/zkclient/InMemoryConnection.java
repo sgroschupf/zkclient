@@ -201,6 +201,11 @@ public class InMemoryConnection implements IZkConnection {
 
     @Override
     public void delete(String path) throws InterruptedException, KeeperException {
+        this.delete(path, -1);
+    }
+    
+    @Override
+    public void delete(String path, int version) throws InterruptedException, KeeperException {
         _lock.lock();
         try {
             if (!exists(path, false)) {
@@ -208,6 +213,13 @@ public class InMemoryConnection implements IZkConnection {
             }
             String parentPath = getParentPath(path);
             checkACL(parentPath, ZooDefs.Perms.DELETE);
+            // If version isn't -1, check that it mateches
+            if(version != -1) {
+                DataAndVersion item = _data.get(path);
+                if(item._version != version) {
+                    throw KeeperException.create(Code.BADVERSION);
+                }
+            }
             _data.remove(path);
             _creationTime.remove(path);
             checkWatch(_nodeWatches, path, EventType.NodeDeleted);
