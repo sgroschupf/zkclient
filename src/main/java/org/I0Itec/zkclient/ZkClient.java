@@ -66,7 +66,7 @@ public class ZkClient implements Watcher {
     protected static final String ZK_LOGIN_CONTEXT_NAME_KEY = "zookeeper.sasl.clientconfig";
 
     protected final IZkConnection _connection;
-    protected final long operationRetryTimeoutInMillis;
+    protected final long _operationRetryTimeoutInMillis;
     private final Map<String, Set<IZkChildListener>> _childListener = new ConcurrentHashMap<String, Set<IZkChildListener>>();
     private final ConcurrentHashMap<String, Set<IZkDataListener>> _dataListener = new ConcurrentHashMap<String, Set<IZkDataListener>>();
     private final Set<IZkStateListener> _stateListener = new CopyOnWriteArraySet<IZkStateListener>();
@@ -150,7 +150,7 @@ public class ZkClient implements Watcher {
         }
         _connection = zkConnection;
         _zkSerializer = zkSerializer;
-        this.operationRetryTimeoutInMillis = operationRetryTimeout;
+        _operationRetryTimeoutInMillis = operationRetryTimeout;
         _isZkSaslEnabled = isZkSaslEnabled();
         connect(connectionTimeout, this);
     }
@@ -999,18 +999,18 @@ public class ZkClient implements Watcher {
                 throw ExceptionUtil.convertToRuntimeException(e);
             }
             // before attempting a retry, check whether retry timeout has elapsed
-            if (this.operationRetryTimeoutInMillis > -1 && (System.currentTimeMillis() - operationStartTime) >= this.operationRetryTimeoutInMillis) {
-                throw new ZkTimeoutException("Operation cannot be retried because of retry timeout (" + this.operationRetryTimeoutInMillis + " milli seconds)");
+            if (_operationRetryTimeoutInMillis > -1 && (System.currentTimeMillis() - operationStartTime) >= _operationRetryTimeoutInMillis) {
+                throw new ZkTimeoutException("Operation cannot be retried because of retry timeout (" + _operationRetryTimeoutInMillis + " milli seconds)");
             }
         }
     }
 
     private void waitForRetry() {
-        if (this.operationRetryTimeoutInMillis < 0) {
-            this.waitUntilConnected();
+        if (_operationRetryTimeoutInMillis < 0) {
+            waitUntilConnected();
             return;
         }
-        this.waitUntilConnected(this.operationRetryTimeoutInMillis, TimeUnit.MILLISECONDS);
+        waitUntilConnected(_operationRetryTimeoutInMillis, TimeUnit.MILLISECONDS);
     }
 
     public void setCurrentState(KeeperState currentState) {
@@ -1034,12 +1034,16 @@ public class ZkClient implements Watcher {
     }
 
     public boolean delete(final String path) {
+        return delete(path, -1);
+    }
+
+    public boolean delete(final String path, final int version) {
         try {
             retryUntilConnected(new Callable<Object>() {
 
                 @Override
                 public Object call() throws Exception {
-                    _connection.delete(path);
+                    _connection.delete(path, version);
                     return null;
                 }
             });

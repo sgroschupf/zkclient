@@ -15,7 +15,13 @@
  */
 package org.I0Itec.zkclient;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -201,6 +207,11 @@ public class InMemoryConnection implements IZkConnection {
 
     @Override
     public void delete(String path) throws InterruptedException, KeeperException {
+        this.delete(path, -1);
+    }
+
+    @Override
+    public void delete(String path, int version) throws InterruptedException, KeeperException {
         _lock.lock();
         try {
             if (!exists(path, false)) {
@@ -208,6 +219,13 @@ public class InMemoryConnection implements IZkConnection {
             }
             String parentPath = getParentPath(path);
             checkACL(parentPath, ZooDefs.Perms.DELETE);
+            // If version isn't -1, check that it mateches
+            if (version != -1) {
+                DataAndVersion item = _data.get(path);
+                if (item._version != version) {
+                    throw KeeperException.create(Code.BADVERSION);
+                }
+            }
             _data.remove(path);
             _creationTime.remove(path);
             checkWatch(_nodeWatches, path, EventType.NodeDeleted);
@@ -384,7 +402,7 @@ public class InMemoryConnection implements IZkConnection {
         }
 
         DataAndVersion dataAndVersion = _data.get(path);
-        if(version != dataAndVersion._version) {
+        if (version != dataAndVersion._version) {
             throw new KeeperException.BadVersionException();
         }
 

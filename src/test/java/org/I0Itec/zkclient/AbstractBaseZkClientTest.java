@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -77,6 +79,26 @@ public abstract class AbstractBaseZkClientTest {
         _client.createPersistent(path, null);
         assertTrue(_client.delete(path));
         assertFalse(_client.delete(path));
+    }
+
+    @Test
+    public void testDeleteWithVersion() throws Exception {
+        LOG.info("--- testDelete");
+        String path = "/a";
+        assertFalse(_client.delete(path, 0));
+        _client.createPersistent(path, null);
+        assertTrue(_client.delete(path, 0));
+        _client.createPersistent(path, null);
+        _client.writeData(path, new byte[0]);
+        assertTrue(_client.delete(path, 1));
+        _client.createPersistent(path, null);
+        try {
+            _client.delete(path, 1);
+            fail("Bad version excpetion expected.");
+        } catch (ZkBadVersionException e) {
+            // expected
+        }
+        assertTrue(_client.delete(path, 0));
     }
 
     @Test

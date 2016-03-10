@@ -3,7 +3,7 @@ CHANGELOG
 
 ZkClient 0.8 (???)
 ---------------
-
+- #45: Support for conditional deletes
 
 
 ZkClient 0.7 (Nov 2015)

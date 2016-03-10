@@ -143,6 +143,11 @@ public class ZkStateChangeTest {
         public void delete(String path) throws InterruptedException, KeeperException {
             throw new RuntimeException("not implemented");
         }
+        
+        @Override
+        public void delete(String path, int version) throws InterruptedException, KeeperException {
+            throw new RuntimeException("not implemented");
+        }
 
         @Override
         public boolean exists(final String path, final boolean watch) throws KeeperException, InterruptedException {
