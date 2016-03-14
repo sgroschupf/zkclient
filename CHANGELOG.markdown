@@ -5,6 +5,7 @@ ZkClient 0.8 (???)
 ---------------
 - #45: Support for conditional deletes
 - Adding ZkAuthFailedException
+- exclude org.apache.jute and zookeeper.proto from imported packages of MANIFEST.MF
 
 
 ZkClient 0.7 (Nov 2015)
