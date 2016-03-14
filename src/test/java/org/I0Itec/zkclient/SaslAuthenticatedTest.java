@@ -173,7 +173,7 @@ public class SaslAuthenticatedTest {
             unauthed = new ZkClient("localhost:" + _port, 6000);
             unauthed.createPersistent("/test", new byte[0], Ids.OPEN_ACL_UNSAFE);
         } catch (ZkException e) {
-            assertThat(e).isInstanceOf(ZkAuthFailedException.class);
+            fail("Unexpected ZkException " + e.getMessage());
         } finally {
             if (unauthed != null) {
                 unauthed.close();
