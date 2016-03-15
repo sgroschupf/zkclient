@@ -188,5 +188,17 @@ public class SaslAuthenticatedTest {
             }
         }
     }
-
+    
+    @Test
+    public void testNoZkJaasFile() throws IOException {
+        try {
+            _zkClientContextName = "OtherClient";
+            _zkServerContextName = "OtherServer";
+            bootstrap();
+            _client.createPersistent("/test", new byte[0], Ids.OPEN_ACL_UNSAFE);
+            assertThat(_client.exists("/test")).isTrue();
+        } catch (ZkAuthFailedException e) {
+            fail("Caught ZkAuthFailed exception and was not expecting it");
+        }
+    }
 }
