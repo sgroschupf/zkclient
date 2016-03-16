@@ -1,7 +1,10 @@
 CHANGELOG
 =====
+ZkClient 0.9 (???)
+---------------
+-
 
-ZkClient 0.8 (???)
+ZkClient 0.8 (Mar 2016)
 ---------------
 - #45: Support for conditional deletes
 - Adding ZkAuthFailedException
