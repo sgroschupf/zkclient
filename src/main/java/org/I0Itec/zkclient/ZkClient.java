@@ -41,7 +41,8 @@ import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.I0Itec.zkclient.serialize.SerializableSerializer;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.I0Itec.zkclient.util.ZkPathUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
@@ -61,7 +62,7 @@ import org.apache.zookeeper.data.Stat;
  */
 public class ZkClient implements Watcher {
 
-    private final static Logger LOG = Logger.getLogger(ZkClient.class);
+    private final static Logger LOG = LoggerFactory.getLogger(ZkClient.class);
     protected static final String JAVA_LOGIN_CONFIG_PARAM = "java.security.auth.login.config";
     protected static final String ZK_SASL_CLIENT = "zookeeper.sasl.client";
     protected static final String ZK_LOGIN_CONTEXT_NAME_KEY = "zookeeper.sasl.clientconfig";

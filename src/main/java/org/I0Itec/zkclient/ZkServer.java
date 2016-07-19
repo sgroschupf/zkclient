@@ -25,13 +25,14 @@ import javax.annotation.PreDestroy;
 
 import org.I0Itec.zkclient.exception.ZkException;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ZkServer {
 
-    private final static Logger LOG = Logger.getLogger(ZkServer.class);
+    private final static Logger LOG = LoggerFactory.getLogger(ZkServer.class);
 
     public static final int DEFAULT_PORT = 2181;
     public static final int DEFAULT_TICK_TIME = 5000;
