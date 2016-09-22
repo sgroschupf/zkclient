@@ -29,11 +29,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GatewayThread extends Thread {
 
-    protected final static Logger LOG = Logger.getLogger(GatewayThread.class);
+    protected final static Logger LOG = LoggerFactory.getLogger(GatewayThread.class);
 
     private final int _port;
     private final int _destinationPort;
