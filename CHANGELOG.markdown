@@ -1,6 +1,11 @@
 CHANGELOG
 =====
-ZkClient 0.10 (???)
+
+ZkClient 0.11 (???)
+---------------
+- ...
+
+ZkClient 0.10 (Nov 2016)
 ---------------
 - #56: Switch from Log4j to Slf4j
 - #41: Provide more information about zookeeper server in case of connection errors
