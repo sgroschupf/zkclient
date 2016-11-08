@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.I0Itec.zkclient.exception.ZkBadVersionException;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,7 +38,7 @@ import org.junit.Test;
 
 public abstract class AbstractBaseZkClientTest {
 
-    protected static final Logger LOG = Logger.getLogger(AbstractBaseZkClientTest.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(AbstractBaseZkClientTest.class);
     protected ZkServer _zkServer;
     protected ZkClient _client;
 
