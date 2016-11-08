@@ -63,6 +63,18 @@ public class ServerZkClientTest extends AbstractBaseZkClientTest {
     }
 
     @Test(timeout = 15000)
+    public void testConnectionTimeout() throws Exception {
+        LOG.info("--- testConnectionTimeout");
+        _zkServer.shutdown();
+        try {
+            new ZkClient("localhost:4711", 500).close();
+            fail("should throw exception");
+        } catch (Exception e) {
+            assertThat(e).isInstanceOf(ZkTimeoutException.class).hasMessageContaining("localhost:4711");
+        }
+    }
+
+    @Test(timeout = 15000)
     public void testRetryUntilConnected() throws Exception {
         LOG.info("--- testRetryUntilConnected");
         Gateway gateway = new Gateway(4712, 4711);

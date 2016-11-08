@@ -2,7 +2,7 @@ CHANGELOG
 =====
 ZkClient 0.10 (???)
 ---------------
-- ...
+- #41: Provide more information about zookeeper server in case of connection errors
 
 
 ZkClient 0.9 (June 2016)
