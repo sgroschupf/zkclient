@@ -24,9 +24,9 @@ import java.lang.reflect.Proxy;
 /**
  * An ObjectInputStream that is aware of the TCCL.
  */
-public class TcclAwareObjectIputStream extends ObjectInputStream {
+public class TcclAwareObjectInputStream extends ObjectInputStream {
 
-	public TcclAwareObjectIputStream(InputStream in) throws IOException {
+	public TcclAwareObjectInputStream(InputStream in) throws IOException {
 		super(in);
 	}
 
