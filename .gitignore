@@ -5,3 +5,8 @@
 .gradle
 build-eclipse
 build
+zkclient.iml
+zkclient.ipr
+zkclient.iws
+.idea
+

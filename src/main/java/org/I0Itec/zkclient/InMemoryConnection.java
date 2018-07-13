@@ -366,6 +366,9 @@ public class InMemoryConnection implements IZkConnection {
         return "mem";
     }
 
+    @Override
+    public String getResolvedServers() { return "mem"; }
+
     public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
         List<OpResult> opResults = new ArrayList<OpResult>();
         for (Op op : ops) {

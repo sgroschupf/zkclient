@@ -204,6 +204,11 @@ public class ZkStateChangeTest {
         }
 
         @Override
+        public String getResolvedServers() {
+            return "test";
+        }
+
+        @Override
         public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
             throw new UnsupportedOperationException();
         }
