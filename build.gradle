@@ -28,7 +28,7 @@ repositories {
     //}
 }
 dependencies {
-    compile 'org.apache.zookeeper:zookeeper:3.4.8'
+    compile 'org.apache.zookeeper:zookeeper:3.4.13'
     compile 'org.slf4j:slf4j-api:1.6.1'
 
     testCompile 'commons-io:commons-io:1.4'
