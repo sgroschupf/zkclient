@@ -7,7 +7,7 @@ apply plugin: 'project-reports'
 apply plugin: 'osgi'
 
 group = 'com.101tec'
-version = '0.11-dev'
+version = '0.11'
 sourceCompatibility = 1.7
 
 jar {

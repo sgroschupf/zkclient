@@ -1,9 +1,15 @@
 CHANGELOG
 =====
 
-ZkClient 0.11 (???)
+ZkClient 0.12 (???)
 ---------------
 - ...
+
+ZkClient 0.11 (Okt 2018)
+---------------
+- Upgrade to Zookeeper 3.4.13 (from 3.4.8)
+  - Fix UnknownHostException if one of the server hosts is currently not available
+
 
 ZkClient 0.10 (Nov 2016)
 ---------------
