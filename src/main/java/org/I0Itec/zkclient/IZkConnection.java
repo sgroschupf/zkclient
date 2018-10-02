@@ -57,8 +57,6 @@ public interface IZkConnection {
 
     public String getServers();
 
-    public String getResolvedServers();
-
     public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException;
 
     public void addAuthInfo(String scheme, byte[] auth);

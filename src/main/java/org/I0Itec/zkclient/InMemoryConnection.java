@@ -61,9 +61,9 @@ import org.apache.zookeeper.proto.SetDataRequest;
 public class InMemoryConnection implements IZkConnection {
 
     public static class DataAndVersion {
-        private byte[] _data;
-        private int _version;
-        private List<ACL> _acl;
+        private final byte[] _data;
+        private final int _version;
+        private final List<ACL> _acl;
 
         public DataAndVersion(byte[] data, int version, List<ACL> acl) {
             _data = data;
@@ -88,20 +88,20 @@ public class InMemoryConnection implements IZkConnection {
         }
     }
 
-    private Lock _lock = new ReentrantLock(true);
-    private Map<String, DataAndVersion> _data = new HashMap<String, DataAndVersion>();
-    private Map<String, Long> _creationTime = new HashMap<String, Long>();
-    private List<Id> _ids = new ArrayList<Id>();
+    private final Lock _lock = new ReentrantLock(true);
+    private final Map<String, DataAndVersion> _data = new HashMap<>();
+    private final Map<String, Long> _creationTime = new HashMap<>();
+    private final List<Id> _ids = new ArrayList<>();
     private final AtomicInteger sequence = new AtomicInteger(0);
 
-    private Set<String> _dataWatches = new HashSet<String>();
-    private Set<String> _nodeWatches = new HashSet<String>();
+    private final Set<String> _dataWatches = new HashSet<>();
+    private final Set<String> _nodeWatches = new HashSet<>();
     private EventThread _eventThread;
 
     private class EventThread extends Thread {
 
-        private Watcher _watcher;
-        private BlockingQueue<WatchedEvent> _blockingQueue = new LinkedBlockingDeque<WatchedEvent>();
+        private final Watcher _watcher;
+        private final BlockingQueue<WatchedEvent> _blockingQueue = new LinkedBlockingDeque<>();
 
         public EventThread(Watcher watcher) {
             _watcher = watcher;
@@ -264,7 +264,7 @@ public class InMemoryConnection implements IZkConnection {
         }
 
         checkACL(path, ZooDefs.Perms.READ);
-        ArrayList<String> children = new ArrayList<String>();
+        ArrayList<String> children = new ArrayList<>();
         String[] directoryStack = path.split("/");
         Set<String> keySet = _data.keySet();
 
@@ -308,8 +308,9 @@ public class InMemoryConnection implements IZkConnection {
             }
             checkACL(path, ZooDefs.Perms.READ);
             byte[] bs = dataAndVersion.getData();
-            if (stat != null)
+            if (stat != null) {
                 stat.setVersion(dataAndVersion.getVersion());
+            }
             return bs;
         } finally {
             _lock.unlock();
@@ -367,10 +368,8 @@ public class InMemoryConnection implements IZkConnection {
     }
 
     @Override
-    public String getResolvedServers() { return "mem"; }
-
     public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
-        List<OpResult> opResults = new ArrayList<OpResult>();
+        List<OpResult> opResults = new ArrayList<>();
         for (Op op : ops) {
             if (Op.Check.class.isAssignableFrom(op.getClass())) {
                 CheckVersionRequest check = (CheckVersionRequest) op.toRequestRecord();
@@ -431,7 +430,7 @@ public class InMemoryConnection implements IZkConnection {
         stat.setVersion(dataAndVersion.getVersion());
         stat.setCtime(_creationTime.get(path));
 
-        return new AbstractMap.SimpleEntry<List<ACL>, Stat>(dataAndVersion.getAcl(), stat);
+        return new AbstractMap.SimpleEntry<>(dataAndVersion.getAcl(), stat);
     }
 
     /***

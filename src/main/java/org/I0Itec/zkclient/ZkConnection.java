@@ -17,19 +17,12 @@ package org.I0Itec.zkclient;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 
 import org.I0Itec.zkclient.exception.ZkException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -40,7 +33,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.client.ConnectStringParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ZkConnection implements IZkConnection {
 
@@ -50,10 +44,9 @@ public class ZkConnection implements IZkConnection {
     private static final int DEFAULT_SESSION_TIMEOUT = 30000;
 
     private ZooKeeper _zk = null;
-    private Lock _zookeeperLock = new ReentrantLock();
+    private final Lock _zookeeperLock = new ReentrantLock();
 
     private final String _servers;
-    private String _resolvedServers;
     private final int _sessionTimeOut;
 
     public ZkConnection(String zkServers) {
@@ -73,12 +66,10 @@ public class ZkConnection implements IZkConnection {
                 throw new IllegalStateException("zk client has already been started");
             }
             try {
-                LOG.debug("Resolving hosts from configured hosts " + _servers);
-                _resolvedServers = resolveHosts();
-                LOG.debug("Creating new ZookKeeper instance to connect to resolved hosts " + _resolvedServers + ".");
-                _zk = new ZooKeeper(_resolvedServers, _sessionTimeOut, watcher);
+                LOG.debug("Creating new ZookKeeper instance to connect to " + _servers + ".");
+                _zk = new ZooKeeper(_servers, _sessionTimeOut, watcher);
             } catch (IOException e) {
-                throw new ZkException("Unable to connect to " + _resolvedServers, e);
+                throw new ZkException("Unable to connect to " + _servers, e);
             }
         } finally {
             _zookeeperLock.unlock();
@@ -172,11 +163,6 @@ public class ZkConnection implements IZkConnection {
     }
 
     @Override
-    public String getResolvedServers() {
-        return _resolvedServers;
-    }
-    
-    @Override
     public List<OpResult> multi(Iterable<Op> ops) throws KeeperException, InterruptedException {
         return _zk.multi(ops);
     }
@@ -198,25 +184,4 @@ public class ZkConnection implements IZkConnection {
         return new SimpleEntry(acl, stat);
     }
 
-    private String resolveHosts() {
-        ConnectStringParser connectStringParser = new ConnectStringParser(_servers);
-        Collection<InetSocketAddress> serverAddresses = connectStringParser.getServerAddresses();
-        List<String> resolvedHosts = new ArrayList<>();
-        for (InetSocketAddress address : serverAddresses) {
-            try {
-                InetAddress ia = address.getAddress();
-                String addr = (ia != null) ? ia.getHostAddress() : address.getHostString();
-                //this will throw an exception if the host is not resolved. Catch exception.
-                InetAddress.getAllByName(addr);
-                resolvedHosts.add(address.getHostString() + ":" + address.getPort());
-            } catch (UnknownHostException ex) {
-                LOG.warn("No IP address found for server: {}", address, ex);
-            }
-        }
-        String resolvedConnectionString = String.join(",", resolvedHosts);
-        if (connectStringParser.getChrootPath() != null) {
-            resolvedConnectionString += connectStringParser.getChrootPath();
-        }
-        return resolvedConnectionString;
-    }
 }
